@@ -1,0 +1,439 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>NexFlow - Personalized Recommendations</title>
+    <script>
+        // Immediate check before anything else loads
+        if (!localStorage.getItem('isLoggedIn')) {
+            window.location.replace('index.html');
+        }
+        
+        // Check for full access
+        if (localStorage.getItem('hasFullAccess') !== 'true') {
+            alert('This feature is only available with a full account. Please log in to access the Recommendations.');
+            window.location.replace('irscore.html');
+        }
+    </script>
+    <link rel="stylesheet" href="styles.css">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            background: var(--gradient);
+            min-height: 100vh;
+            margin: 0;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 2rem;
+        }
+
+        .container {
+            margin-top: 4rem;
+            max-width: 1200px;
+            width: 100%;
+        }
+
+        .header {
+            text-align: center;
+            color: white;
+            margin-bottom: 2rem;
+        }
+
+        .header h1 {
+            font-size: 2.5rem;
+            margin-bottom: 1rem;
+        }
+
+        .header p {
+            font-size: 1.1rem;
+            opacity: 0.9;
+        }
+
+        .filter-section {
+            display: flex;
+            justify-content: center;
+            gap: 1rem;
+            margin-bottom: 2rem;
+            flex-wrap: wrap;
+        }
+
+        .filter-button {
+            padding: 0.8rem 1.5rem;
+            border: 2px solid rgba(255, 255, 255, 0.3);
+            border-radius: 25px;
+            background: transparent;
+            color: white;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-weight: 500;
+        }
+
+        .filter-button:hover,
+        .filter-button.active {
+            background: rgba(255, 255, 255, 0.1);
+            border-color: white;
+            transform: translateY(-2px);
+        }
+
+        .recommendations-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 2rem;
+        }
+
+        .recommendation-card {
+            background: white;
+            border-radius: 15px;
+            padding: 1.5rem;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            transition: transform 0.3s ease;
+        }
+
+        .recommendation-card:hover {
+            transform: translateY(-5px);
+        }
+
+        .card-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1rem;
+        }
+
+        .card-header h3 {
+            color: var(--primary-color);
+            margin: 0;
+        }
+
+        .impact-score {
+            background: var(--gradient);
+            color: white;
+            padding: 0.5rem 1rem;
+            border-radius: 20px;
+            font-weight: 600;
+        }
+
+        .card-content {
+            margin-bottom: 1.5rem;
+        }
+
+        .card-content p {
+            color: #4B5563;
+            line-height: 1.6;
+        }
+
+        .action-buttons {
+            display: flex;
+            gap: 1rem;
+        }
+
+        .action-button {
+            flex: 1;
+            padding: 0.8rem;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 500;
+            transition: all 0.3s ease;
+        }
+
+        .primary-action {
+            background: var(--primary-color);
+            color: white;
+        }
+
+        .secondary-action {
+            background: #E5E7EB;
+            color: #4B5563;
+        }
+
+        .action-button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        }
+
+        .nav-bar {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            background: rgba(0, 0, 0, 0.2);
+            padding: 1rem;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+        }
+
+        .nav-links {
+            display: flex;
+            gap: 1rem;
+            position: relative;
+        }
+
+        .nav-bar a {
+            color: white;
+            text-decoration: none;
+            padding: 0.8rem 1.5rem;
+            border-radius: 25px;
+            transition: all 0.3s ease;
+            font-weight: 500;
+        }
+
+        .nav-bar a:hover {
+            background: rgba(255, 255, 255, 0.2);
+            transform: translateY(-2px);
+        }
+
+        .nav-bar a.active {
+            background: var(--primary-color);
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+
+        .logout-button {
+            position: absolute;
+            right: -120px;
+            background: rgba(255, 255, 255, 0.1);
+            padding: 0.8rem 1.5rem;
+            border-radius: 25px;
+            color: white;
+            text-decoration: none;
+            transition: all 0.3s ease;
+            font-weight: 500;
+        }
+
+        .logout-button:hover {
+            background: rgba(255, 255, 255, 0.2);
+            transform: translateY(-2px);
+        }
+
+        @media (max-width: 768px) {
+            .nav-bar {
+                flex-direction: column;
+                gap: 1rem;
+            }
+
+            .nav-links {
+                flex-direction: column;
+                align-items: center;
+            }
+
+            .logout-button {
+                position: static;
+                margin-top: 1rem;
+            }
+        }
+
+        .no-data-message {
+            text-align: center;
+            color: white;
+            padding: 2rem;
+        }
+
+        .no-data-message h2 {
+            font-size: 1.8rem;
+            margin-bottom: 1rem;
+        }
+
+        .no-data-message p {
+            font-size: 1.1rem;
+            opacity: 0.9;
+            margin-bottom: 2rem;
+        }
+
+        .cta-button {
+            display: inline-block;
+            padding: 1rem 2rem;
+            background: var(--primary-color);
+            color: white;
+            text-decoration: none;
+            border-radius: 25px;
+            font-weight: 500;
+            transition: all 0.3s ease;
+        }
+
+        .cta-button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+    </style>
+</head>
+<body>
+    <nav class="nav-bar">
+        <div class="nav-links">
+            <a href="irscore.html">IRScore Calculator</a>
+            <a href="trajectory.html">Trajectory Panel</a>
+            <a href="recommendations.html" class="active">Recommendations</a>
+            <a href="#" onclick="handleLogout()" class="logout-button">Logout</a>
+        </div>
+    </nav>
+
+    <div class="container" id="main-content" style="display: none;">
+        <div class="header">
+            <h1>Personalized Recommendations</h1>
+            <p>Based on your IRScore and lifestyle factors, here are your personalized recommendations</p>
+        </div>
+
+        <div class="filter-section">
+            <button class="filter-button active" data-category="all">All</button>
+            <button class="filter-button" data-category="diet">Diet</button>
+            <button class="filter-button" data-category="exercise">Exercise</button>
+            <button class="filter-button" data-category="sleep">Sleep</button>
+            <button class="filter-button" data-category="lifestyle">Lifestyle</button>
+        </div>
+
+        <div class="recommendations-grid" id="recommendations-container">
+            <!-- Recommendations will be dynamically inserted here -->
+        </div>
+    </div>
+
+    <div class="container" id="no-data-message">
+        <div class="no-data-message">
+            <h2>No Data Available</h2>
+            <p>Please complete the IRScore Calculator first to view your recommendations.</p>
+            <a href="irscore.html" class="cta-button">Go to Calculator</a>
+        </div>
+    </div>
+
+    <script>
+        // Check login and data status
+        function checkAccess() {
+            const isLoggedIn = localStorage.getItem('isLoggedIn') === 'true';
+            const userData = localStorage.getItem('irscoreData');
+            
+            if (!isLoggedIn) {
+                window.location.href = '../index.html';
+                return false;
+            }
+            
+            if (!userData) {
+                alert('Please complete the IRScore Calculator first to access the Recommendations.');
+                window.location.href = 'irscore.html';
+                return false;
+            }
+            
+            return true;
+        }
+
+        // Show/hide content based on data availability
+        function checkUserData() {
+            const mainContent = document.getElementById('main-content');
+            const noDataMessage = document.getElementById('no-data-message');
+            const userData = JSON.parse(localStorage.getItem('irscoreData'));
+            
+            if (userData) {
+                mainContent.style.display = 'block';
+                noDataMessage.style.display = 'none';
+            } else {
+                mainContent.style.display = 'none';
+                noDataMessage.style.display = 'block';
+            }
+        }
+
+        // Run check on page load
+        checkUserData();
+
+        const recommendations = [
+            {
+                category: 'diet',
+                title: 'Optimize Carbohydrate Intake',
+                impact: 'High',
+                description: 'Based on your current diet, increasing complex carbohydrates and fiber intake could significantly improve your insulin sensitivity. Aim for 25-30g of fiber daily from whole foods.',
+                primaryAction: 'View Meal Plan',
+                secondaryAction: 'Learn More'
+            },
+            {
+                category: 'exercise',
+                title: 'Increase Cardio Activity',
+                impact: 'High',
+                description: 'Adding 30 minutes of moderate-intensity cardio 4-5 times per week can boost your insulin sensitivity. Consider brisk walking, cycling, or swimming.',
+                primaryAction: 'View Workout Plan',
+                secondaryAction: 'Track Progress'
+            },
+            {
+                category: 'sleep',
+                title: 'Improve Sleep Quality',
+                impact: 'Medium',
+                description: 'Your current sleep patterns may be limiting your insulin sensitivity. Aim for 7-8 hours of quality sleep and maintain a consistent sleep schedule to improve your score.',
+                primaryAction: 'Sleep Tips',
+                secondaryAction: 'Track Sleep'
+            },
+            {
+                category: 'lifestyle',
+                title: 'Stress Management',
+                impact: 'Medium',
+                description: 'High stress levels can reduce insulin sensitivity. Consider incorporating daily meditation or deep breathing exercises for 10-15 minutes to improve your score.',
+                primaryAction: 'Start Meditation',
+                secondaryAction: 'Stress Tips'
+            },
+            {
+                category: 'diet',
+                title: 'Protein Distribution',
+                impact: 'Medium',
+                description: 'Distribute your protein intake evenly throughout the day. Aim for 20-30g of protein per meal to support muscle maintenance and boost your metabolic health score.',
+                primaryAction: 'Protein Guide',
+                secondaryAction: 'Meal Ideas'
+            },
+            {
+                category: 'exercise',
+                title: 'Strength Training',
+                impact: 'High',
+                description: 'Incorporate resistance training 2-3 times per week. Focus on compound movements that work multiple muscle groups to enhance your insulin sensitivity score.',
+                primaryAction: 'Workout Guide',
+                secondaryAction: 'Track Progress'
+            }
+        ];
+
+        function renderRecommendations(category = 'all') {
+            const container = document.getElementById('recommendations-container');
+            container.innerHTML = '';
+
+            const filteredRecommendations = category === 'all' 
+                ? recommendations 
+                : recommendations.filter(rec => rec.category === category);
+
+            filteredRecommendations.forEach(rec => {
+                const card = document.createElement('div');
+                card.className = 'recommendation-card';
+                card.innerHTML = `
+                    <div class="card-header">
+                        <h3>${rec.title}</h3>
+                        <span class="impact-score">${rec.impact} Impact</span>
+                    </div>
+                    <div class="card-content">
+                        <p>${rec.description}</p>
+                    </div>
+                    <div class="action-buttons">
+                        <button class="action-button primary-action">${rec.primaryAction}</button>
+                        <button class="action-button secondary-action">${rec.secondaryAction}</button>
+                    </div>
+                `;
+                container.appendChild(card);
+            });
+        }
+
+        // Add event listeners to filter buttons
+        document.querySelectorAll('.filter-button').forEach(button => {
+            button.addEventListener('click', function() {
+                document.querySelectorAll('.filter-button').forEach(b => b.classList.remove('active'));
+                this.classList.add('active');
+                renderRecommendations(this.dataset.category);
+            });
+        });
+
+        // Initial render
+        renderRecommendations();
+
+        function handleLogout() {
+            // Clear all login-related data
+            localStorage.removeItem('isLoggedIn');
+            localStorage.removeItem('hasFullAccess');
+            localStorage.removeItem('irscoreData');
+            // Redirect to login page
+            window.location.href = 'index.html';
+        }
+    </script>
+</body>
+</html> 
