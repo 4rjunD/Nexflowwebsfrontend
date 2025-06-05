@@ -1,0 +1,258 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>NexFlow - Choose Your Plan</title>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --primary-color: #8B5CF6;
+            --gradient: linear-gradient(135deg, #8B5CF6, #6366F1);
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Poppins', sans-serif;
+        }
+
+        body {
+            background: var(--gradient);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 2rem;
+        }
+
+        .header {
+            text-align: center;
+            color: white;
+            margin-bottom: 3rem;
+            max-width: 800px;
+        }
+
+        .header h1 {
+            font-size: 3rem;
+            margin-bottom: 1rem;
+        }
+
+        .header p {
+            font-size: 1.2rem;
+            opacity: 0.9;
+        }
+
+        .pricing-container {
+            display: flex;
+            gap: 2rem;
+            flex-wrap: wrap;
+            justify-content: center;
+            max-width: 1200px;
+            width: 100%;
+        }
+
+        .pricing-card {
+            background: rgba(255, 255, 255, 0.95);
+            padding: 2rem;
+            border-radius: 20px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+            width: 100%;
+            max-width: 400px;
+            text-align: center;
+            transition: transform 0.3s ease;
+        }
+
+        .pricing-card:hover {
+            transform: translateY(-10px);
+        }
+
+        .pricing-card.featured {
+            border: 2px solid var(--primary-color);
+            position: relative;
+        }
+
+        .featured-badge {
+            position: absolute;
+            top: -12px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: var(--primary-color);
+            color: white;
+            padding: 0.5rem 1rem;
+            border-radius: 20px;
+            font-size: 0.9rem;
+            font-weight: 500;
+        }
+
+        .plan-name {
+            color: var(--primary-color);
+            font-size: 1.5rem;
+            font-weight: 600;
+            margin-bottom: 1rem;
+        }
+
+        .price {
+            font-size: 3rem;
+            font-weight: 700;
+            color: #1F2937;
+            margin-bottom: 1rem;
+        }
+
+        .price span {
+            font-size: 1rem;
+            font-weight: 400;
+            color: #6B7280;
+        }
+
+        .features {
+            list-style: none;
+            margin: 2rem 0;
+            text-align: left;
+        }
+
+        .features li {
+            margin-bottom: 1rem;
+            color: #4B5563;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .features li::before {
+            content: '✓';
+            color: var(--primary-color);
+            font-weight: bold;
+        }
+
+        .features li.disabled {
+            color: #9CA3AF;
+        }
+
+        .features li.disabled::before {
+            content: '×';
+            color: #9CA3AF;
+        }
+
+        .subscribe-button {
+            background: var(--gradient);
+            color: white;
+            border: none;
+            padding: 1rem 2rem;
+            border-radius: 8px;
+            font-size: 1rem;
+            font-weight: 500;
+            cursor: pointer;
+            width: 100%;
+            transition: all 0.3s ease;
+        }
+
+        .subscribe-button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+
+        .subscribe-button.secondary {
+            background: #E5E7EB;
+            color: #4B5563;
+        }
+
+        .guarantee {
+            text-align: center;
+            color: white;
+            margin-top: 3rem;
+            font-size: 0.9rem;
+            opacity: 0.9;
+        }
+
+        .back-link {
+            position: absolute;
+            top: 2rem;
+            left: 2rem;
+            color: white;
+            text-decoration: none;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            font-weight: 500;
+            transition: opacity 0.3s ease;
+        }
+
+        .back-link:hover {
+            opacity: 0.8;
+        }
+
+        @media (max-width: 768px) {
+            .pricing-container {
+                flex-direction: column;
+                align-items: center;
+            }
+
+            .pricing-card {
+                max-width: 100%;
+            }
+
+            .back-link {
+                position: static;
+                margin-bottom: 2rem;
+                justify-content: center;
+            }
+        }
+    </style>
+</head>
+<body>
+    <a href="index.html" class="back-link">← Back to Login</a>
+
+    <div class="header">
+        <h1>Choose Your Plan</h1>
+        <p>Unlock the full potential of your metabolic health journey with our premium features</p>
+    </div>
+
+    <div class="pricing-container">
+        <div class="pricing-card">
+            <div class="plan-name">Free Plan</div>
+            <div class="price">$0<span>/forever</span></div>
+            <ul class="features">
+                <li>Basic IRScore Calculator</li>
+                <li>One score calculation per month</li>
+                <li>Basic score interpretation</li>
+                <li class="disabled">Personalized recommendations</li>
+                <li class="disabled">Trajectory analysis</li>
+                <li class="disabled">Advanced health tracking</li>
+                <li class="disabled">Historical data access</li>
+                <li class="disabled">Detailed insights</li>
+            </ul>
+            <button onclick="window.location.href='free-signup.html'" class="subscribe-button secondary">Start Free Plan</button>
+        </div>
+
+        <div class="pricing-card featured">
+            <div class="featured-badge">Most Popular</div>
+            <div class="plan-name">Pro Plan</div>
+            <div class="price">$5.99<span>/month</span></div>
+            <ul class="features">
+                <li>Unlimited IRScore calculations</li>
+                <li>Personalized recommendations</li>
+                <li>Advanced trajectory analysis</li>
+                <li>Comprehensive health tracking</li>
+                <li>Historical data access</li>
+                <li>Detailed insights and trends</li>
+                <li>Progress monitoring</li>
+                <li>Priority support</li>
+            </ul>
+            <button onclick="window.location.href='signup.html'" class="subscribe-button">Get Started</button>
+        </div>
+    </div>
+
+    <div class="guarantee">
+        <p>🔒 Secure payment • Cancel anytime • 30-day money-back guarantee</p>
+    </div>
+
+    <script>
+        // Check if user is already logged in
+        if (localStorage.getItem('isLoggedIn') === 'true') {
+            window.location.href = 'irscore.html';
+        }
+    </script>
+</body>
+</html> 
