@@ -383,7 +383,7 @@
     const payload = { age, gender, bmi, weight, height, sleep, family_history, activity };
 
     try {
-        const response = await fetch('https://nexflowwebs.vercel.app/api/predict', {
+        const response = await fetch('https://nexflowwebs.onrender.com/', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify(payload)
