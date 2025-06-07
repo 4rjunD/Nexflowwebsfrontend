@@ -2,13 +2,14 @@
 <html lang="en">
 <head>
     <!-- Google tag (gtag.js) -->
-    <script async src="https://www.googletagmanager.com/gtag/js?id=G-DX2DMYF5GM"></script>
-    <script>
-        window.dataLayer = window.dataLayer || [];
-        function gtag(){dataLayer.push(arguments);}
-        gtag('js', new Date());
-        gtag('config', 'G-DX2DMYF5GM');
-    </script>
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-DX2DMYF5GM"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+
+  gtag('config', 'G-DX2DMYF5GM');
+</script>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>NexFlow - Free Plan Sign Up</title>
@@ -184,36 +185,12 @@
         }
 
         @media (max-width: 480px) {
-            body {
-                padding: 1rem;
-            }
-
             .signup-container {
-                padding: 1.5rem;
-                border-radius: 16px;
+                padding: 2rem;
             }
 
             .logo h1 {
                 font-size: 2rem;
-            }
-
-            .logo p {
-                font-size: 0.95rem;
-            }
-
-            .plan-info h3 {
-                font-size: 1rem;
-            }
-
-            .form-group input {
-                font-size: 0.95rem;
-                padding: 0.7rem;
-            }
-
-            .signup-button,
-            .upgrade-button {
-                font-size: 0.95rem;
-                padding: 0.9rem 1.2rem;
             }
         }
     </style>
@@ -264,39 +241,49 @@
     <script>
         function handleSignup(event) {
             event.preventDefault();
+            
+            // Get form values
             const name = document.getElementById('name').value;
             const email = document.getElementById('email').value;
             const password = document.getElementById('password').value;
             const confirmPassword = document.getElementById('confirm-password').value;
-
+            
+            // Reset error messages
             document.querySelectorAll('.error-message').forEach(el => el.style.display = 'none');
-
+            
+            // Validate email format
             const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
             if (!emailRegex.test(email)) {
                 document.getElementById('email-error').textContent = 'Please enter a valid email address';
                 document.getElementById('email-error').style.display = 'block';
                 return;
             }
-
+            
+            // Validate password length
             if (password.length < 8) {
                 document.getElementById('password-error').textContent = 'Password must be at least 8 characters long';
                 document.getElementById('password-error').style.display = 'block';
                 return;
             }
-
+            
+            // Check if passwords match
             if (password !== confirmPassword) {
                 document.getElementById('confirm-password-error').textContent = 'Passwords do not match';
                 document.getElementById('confirm-password-error').style.display = 'block';
                 return;
             }
-
+            
+            // Get existing users or initialize empty array
             const users = JSON.parse(localStorage.getItem('users') || '[]');
+            
+            // Check if email already exists
             if (users.some(user => user.email === email)) {
                 document.getElementById('email-error').textContent = 'This email is already registered';
                 document.getElementById('email-error').style.display = 'block';
                 return;
             }
-
+            
+            // Add new user with free plan
             users.push({
                 name,
                 email,
@@ -305,8 +292,11 @@
                 lastCalculationDate: null,
                 plan: 'free'
             });
-
+            
+            // Save updated users array
             localStorage.setItem('users', JSON.stringify(users));
+            
+            // Set current user
             localStorage.setItem('currentUser', JSON.stringify({
                 name,
                 email,
@@ -314,10 +304,14 @@
                 lastCalculationDate: null,
                 plan: 'free'
             }));
+            
+            // Set login status
             localStorage.setItem('isLoggedIn', 'true');
             localStorage.setItem('hasFullAccess', 'false');
+            
+            // Redirect to calculator
             window.location.href = 'irscore.html';
         }
     </script>
 </body>
-</html>
+</html> 
