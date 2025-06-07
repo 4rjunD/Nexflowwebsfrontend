@@ -2,13 +2,14 @@
 <html lang="en">
 <head>
     <!-- Google tag (gtag.js) -->
-    <script async src="https://www.googletagmanager.com/gtag/js?id=G-DX2DMYF5GM"></script>
-    <script>
-      window.dataLayer = window.dataLayer || [];
-      function gtag(){dataLayer.push(arguments);}
-      gtag('js', new Date());
-      gtag('config', 'G-DX2DMYF5GM');
-    </script>
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-DX2DMYF5GM"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+
+  gtag('config', 'G-DX2DMYF5GM');
+</script>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>NexFlow - Sign Up</title>
@@ -125,6 +126,16 @@
             display: none;
         }
 
+        @media (max-width: 480px) {
+            .signup-container {
+                padding: 2rem;
+            }
+
+            .logo h1 {
+                font-size: 2rem;
+            }
+        }
+
         .subscription-info {
             background: var(--gradient);
             padding: 1.5rem;
@@ -188,56 +199,6 @@
 
         .terms a:hover {
             text-decoration: underline;
-        }
-
-        @media (max-width: 480px) {
-            .signup-container {
-                padding: 1.5rem;
-            }
-
-            .logo h1 {
-                font-size: 1.8rem;
-            }
-
-            .subscription-info {
-                padding: 1rem;
-            }
-
-            .price {
-                font-size: 2rem;
-            }
-
-            .subscription-text {
-                font-size: 1rem;
-            }
-
-            .payment-section {
-                padding: 1rem;
-            }
-
-            .form-row {
-                grid-template-columns: 1fr;
-            }
-
-            .signup-button {
-                font-size: 0.95rem;
-                padding: 0.8rem;
-            }
-
-            .form-group input {
-                font-size: 0.95rem;
-                padding: 0.7rem;
-            }
-
-            .terms {
-                font-size: 0.8rem;
-                flex-direction: column;
-                align-items: flex-start;
-            }
-
-            .login-link {
-                font-size: 0.85rem;
-            }
         }
     </style>
 </head>
@@ -303,7 +264,8 @@
     <script>
         function handleSignup(event) {
             event.preventDefault();
-
+            
+            // Get form values
             const name = document.getElementById('name').value;
             const email = document.getElementById('email').value;
             const password = document.getElementById('password').value;
@@ -311,36 +273,43 @@
             const cardNumber = document.getElementById('card-number').value;
             const expiry = document.getElementById('expiry').value;
             const cvv = document.getElementById('cvv').value;
-
+            
+            // Reset error messages
             document.querySelectorAll('.error-message').forEach(el => el.style.display = 'none');
-
+            
+            // Validate email format
             const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
             if (!emailRegex.test(email)) {
                 document.getElementById('email-error').textContent = 'Please enter a valid email address';
                 document.getElementById('email-error').style.display = 'block';
                 return;
             }
-
+            
+            // Validate password length
             if (password.length < 8) {
                 document.getElementById('password-error').textContent = 'Password must be at least 8 characters long';
                 document.getElementById('password-error').style.display = 'block';
                 return;
             }
-
+            
+            // Check if passwords match
             if (password !== confirmPassword) {
                 document.getElementById('confirm-password-error').textContent = 'Passwords do not match';
                 document.getElementById('confirm-password-error').style.display = 'block';
                 return;
             }
-
+            
+            // Get existing users or initialize empty array
             const users = JSON.parse(localStorage.getItem('users') || '[]');
-
+            
+            // Check if email already exists
             if (users.some(user => user.email === email)) {
                 document.getElementById('email-error').textContent = 'This email is already registered';
                 document.getElementById('email-error').style.display = 'block';
                 return;
             }
-
+            
+            // Add new user with subscription
             users.push({
                 name,
                 email,
@@ -353,8 +322,11 @@
                     cardLast4: cardNumber.slice(-4)
                 }
             });
-
+            
+            // Save updated users array
             localStorage.setItem('users', JSON.stringify(users));
+            
+            // Set current user
             localStorage.setItem('currentUser', JSON.stringify({
                 name,
                 email,
@@ -365,12 +337,14 @@
                     startDate: new Date().toISOString()
                 }
             }));
-
+            
+            // Set login status
             localStorage.setItem('isLoggedIn', 'true');
             localStorage.setItem('hasFullAccess', 'true');
-
+            
+            // Redirect to calculator
             window.location.href = 'irscore.html';
         }
     </script>
 </body>
-</html>
+</html> 
