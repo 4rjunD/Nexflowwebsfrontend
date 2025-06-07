@@ -168,6 +168,13 @@
             text-decoration: underline;
         }
 
+        .error-message {
+            color: #EF4444;
+            font-size: 0.9rem;
+            margin-top: 0.5rem;
+            display: none;
+        }
+
         @media (max-width: 480px) {
             .login-container {
                 padding: 2rem;
@@ -204,53 +211,133 @@
             <button onclick="handleDemoLogin()" class="demo-button">Try Demo Version</button>
         </div>
         <div class="signup-link">
-            <p>Ready to unlock full access? <a href="pricing.html">View Pro Plans</a></p>
+            <p>Don't have an account? <a href="#" onclick="showSignupForm()">Sign Up</a></p>
+        </div>
+    </div>
+
+    <!-- Signup Form (Hidden by default) -->
+    <div class="login-container" id="signup-container" style="display: none;">
+        <div class="logo">
+            <h1>NexFlow</h1>
+            <p>Create Your Account</p>
+        </div>
+        <form id="signup-form" onsubmit="handleSignup(event)">
+            <div class="form-group">
+                <label for="signup-name">Full Name</label>
+                <input type="text" id="signup-name" required placeholder="Enter your full name">
+            </div>
+            <div class="form-group">
+                <label for="signup-email">Email</label>
+                <input type="email" id="signup-email" required placeholder="Enter your email">
+                <div class="error-message" id="signup-email-error"></div>
+            </div>
+            <div class="form-group">
+                <label for="signup-password">Password</label>
+                <input type="password" id="signup-password" required minlength="8" placeholder="Enter your password">
+            </div>
+            <div class="form-group">
+                <label for="signup-confirm-password">Confirm Password</label>
+                <input type="password" id="signup-confirm-password" required minlength="8" placeholder="Confirm your password">
+                <div class="error-message" id="signup-password-error"></div>
+            </div>
+            <button type="submit" class="login-button">Sign Up</button>
+        </form>
+        <div class="signup-link">
+            <p>Already have an account? <a href="#" onclick="showLoginForm()">Login</a></p>
         </div>
     </div>
 
     <script>
-        function handleLogin(event) {
+        // Check if already logged in
+        if (localStorage.getItem('isLoggedIn') === 'true') {
+            window.location.href = 'irscore.html';
+        }
+
+        function showSignupForm() {
+            document.querySelector('.login-container').style.display = 'none';
+            document.getElementById('signup-container').style.display = 'block';
+        }
+
+        function showLoginForm() {
+            document.querySelector('.login-container').style.display = 'block';
+            document.getElementById('signup-container').style.display = 'none';
+        }
+
+        async function handleLogin(event) {
             event.preventDefault();
             
-            // Get form values
             const email = document.getElementById('email').value;
             const password = document.getElementById('password').value;
+            const errorElement = document.getElementById('email-error');
             
-            // Reset error messages
-            document.querySelectorAll('.error-message').forEach(el => el.style.display = 'none');
-            
-            // Get users from localStorage
-            const users = JSON.parse(localStorage.getItem('users') || '[]');
-            
-            // Find user
-            const user = users.find(u => u.email === email && btoa(password) === u.password);
-            
-            if (user) {
-                // Check if user has an active subscription
-                if (!user.subscription) {
-                    alert('Please subscribe to a Pro plan to access your account.');
-                    window.location.href = 'pricing.html';
-                    return;
+            try {
+                const response = await fetch('https://nexflowwebs.onrender.com/login', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ email, password })
+                });
+
+                const data = await response.json();
+
+                if (response.ok) {
+                    localStorage.setItem('isLoggedIn', 'true');
+                    localStorage.setItem('userEmail', email);
+                    window.location.href = 'irscore.html';
+                } else {
+                    errorElement.textContent = data.message || 'Invalid email or password';
+                    errorElement.style.display = 'block';
                 }
+            } catch (error) {
+                errorElement.textContent = 'An error occurred. Please try again.';
+                errorElement.style.display = 'block';
+            }
+        }
+
+        async function handleSignup(event) {
+            event.preventDefault();
+            
+            const name = document.getElementById('signup-name').value;
+            const email = document.getElementById('signup-email').value;
+            const password = document.getElementById('signup-password').value;
+            const confirmPassword = document.getElementById('signup-confirm-password').value;
+            const errorElement = document.getElementById('signup-password-error');
+
+            if (password !== confirmPassword) {
+                errorElement.textContent = 'Passwords do not match';
+                errorElement.style.display = 'block';
+                return;
+            }
+
+            try {
+                console.log('Attempting to sign up with:', { name, email }); // Log attempt
                 
-                // Set current user
-                localStorage.setItem('currentUser', JSON.stringify({
-                    name: user.name,
-                    email: user.email,
-                    hasFullAccess: user.hasFullAccess,
-                    subscription: user.subscription
-                }));
+                const response = await fetch('https://nexflowwebs.onrender.com/signup', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ name, email, password })
+                });
+
+                console.log('Response status:', response.status); // Log response status
                 
-                // Set login status
-                localStorage.setItem('isLoggedIn', 'true');
-                localStorage.setItem('hasFullAccess', user.hasFullAccess ? 'true' : 'false');
-                
-                // Redirect to calculator
-                window.location.href = 'irscore.html';
-            } else {
-                // Show error message
-                document.getElementById('email-error').textContent = 'Invalid email or password';
-                document.getElementById('email-error').style.display = 'block';
+                const data = await response.json();
+                console.log('Response data:', data); // Log response data
+
+                if (response.ok) {
+                    localStorage.setItem('isLoggedIn', 'true');
+                    localStorage.setItem('userEmail', email);
+                    window.location.href = 'irscore.html';
+                } else {
+                    errorElement.textContent = data.message || 'Error creating account';
+                    errorElement.style.display = 'block';
+                }
+            } catch (error) {
+                console.error('Signup error:', error); // Log detailed error
+                errorElement.textContent = `Error: ${error.message}. Please check your internet connection and try again.`;
+                errorElement.style.display = 'block';
             }
         }
 
@@ -274,11 +361,6 @@
             }));
             
             // Redirect to calculator
-            window.location.href = 'irscore.html';
-        }
-
-        // Check if already logged in
-        if (localStorage.getItem('isLoggedIn') === 'true') {
             window.location.href = 'irscore.html';
         }
 
