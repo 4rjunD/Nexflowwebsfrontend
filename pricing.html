@@ -2,14 +2,13 @@
 <html lang="en">
 <head>
     <!-- Google tag (gtag.js) -->
-<script async src="https://www.googletagmanager.com/gtag/js?id=G-DX2DMYF5GM"></script>
-<script>
-  window.dataLayer = window.dataLayer || [];
-  function gtag(){dataLayer.push(arguments);}
-  gtag('js', new Date());
-
-  gtag('config', 'G-DX2DMYF5GM');
-</script>
+    <script async src="https://www.googletagmanager.com/gtag/js?id=G-DX2DMYF5GM"></script>
+    <script>
+      window.dataLayer = window.dataLayer || [];
+      function gtag(){dataLayer.push(arguments);}
+      gtag('js', new Date());
+      gtag('config', 'G-DX2DMYF5GM');
+    </script>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>NexFlow - Choose Your Plan</title>
@@ -208,6 +207,33 @@
                 justify-content: center;
             }
         }
+
+        @media (max-width: 480px) {
+            .header h1 {
+                font-size: 2rem;
+            }
+
+            .header p {
+                font-size: 1rem;
+            }
+
+            .price {
+                font-size: 2.2rem;
+            }
+
+            .subscribe-button {
+                font-size: 0.95rem;
+                padding: 0.8rem 1.2rem;
+            }
+
+            .features li {
+                font-size: 0.95rem;
+            }
+
+            .back-link {
+                font-size: 0.95rem;
+            }
+        }
     </style>
 </head>
 <body>
@@ -258,10 +284,10 @@
     </div>
 
     <script>
-        // Check if user is already logged in
+        // Redirect logged in users
         if (localStorage.getItem('isLoggedIn') === 'true') {
             window.location.href = 'irscore.html';
         }
     </script>
 </body>
-</html> 
+</html>
