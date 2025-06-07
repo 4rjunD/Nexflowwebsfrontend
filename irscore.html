@@ -2,17 +2,19 @@
 <html lang="en">
 <head>
     <!-- Google tag (gtag.js) -->
-    <script async src="https://www.googletagmanager.com/gtag/js?id=G-DX2DMYF5GM"></script>
-    <script>
-        window.dataLayer = window.dataLayer || [];
-        function gtag(){dataLayer.push(arguments);}
-        gtag('js', new Date());
-        gtag('config', 'G-DX2DMYF5GM');
-    </script>
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-DX2DMYF5GM"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+
+  gtag('config', 'G-DX2DMYF5GM');
+</script>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>NexFlow - Insulin Resistance Calculator</title>
     <script>
+        // Immediate check before anything else loads
         if (!localStorage.getItem('isLoggedIn')) {
             window.location.replace('index.html');
         }
@@ -20,20 +22,6 @@
     <link rel="stylesheet" href="styles.css">
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <style>
-        :root {
-            --primary-color: #8B5CF6;
-            --gradient: linear-gradient(135deg, #8B5CF6, #6366F1);
-            --card-background: #ffffff;
-            --text-color: #374151;
-        }
-
-        * {
-            box-sizing: border-box;
-            margin: 0;
-            padding: 0;
-            font-family: 'Poppins', sans-serif;
-        }
-
         body {
             background: var(--gradient);
             min-height: 100vh;
@@ -44,13 +32,41 @@
             padding: 2rem;
         }
 
+        .welcome-container {
+            max-width: 1200px;
+            width: 100%;
+            text-align: center;
+            margin-bottom: 3rem;
+        }
+
+        .welcome-text {
+            color: white;
+            padding: 2rem;
+            max-width: 800px;
+            margin: 0 auto;
+        }
+
+        .welcome-text h1 {
+            font-size: 3rem;
+            margin-bottom: 1.5rem;
+            animation: fadeInUp 1s ease;
+        }
+
+        .welcome-text p {
+            font-size: 1.2rem;
+            margin-bottom: 2rem;
+            opacity: 0.9;
+            animation: fadeInUp 1s ease 0.2s;
+            animation-fill-mode: forwards;
+        }
+
         .nav-bar {
             position: fixed;
             top: 0;
             left: 0;
             right: 0;
-            height: 60px;
             background: rgba(0, 0, 0, 0.2);
+            padding: 1rem;
             display: flex;
             justify-content: center;
             align-items: center;
@@ -60,18 +76,16 @@
         .nav-links {
             display: flex;
             gap: 1rem;
-            align-items: center;
             position: relative;
         }
 
         .nav-bar a {
             color: white;
             text-decoration: none;
-            padding: 0.6rem 1.2rem;
+            padding: 0.8rem 1.5rem;
             border-radius: 25px;
             transition: all 0.3s ease;
             font-weight: 500;
-            font-size: 0.95rem;
         }
 
         .nav-bar a:hover {
@@ -88,13 +102,12 @@
             position: absolute;
             right: -120px;
             background: rgba(255, 255, 255, 0.1);
-            padding: 0.6rem 1.2rem;
+            padding: 0.8rem 1.5rem;
             border-radius: 25px;
             color: white;
             text-decoration: none;
             transition: all 0.3s ease;
             font-weight: 500;
-            font-size: 0.9rem;
         }
 
         .logout-button:hover {
@@ -103,26 +116,32 @@
         }
 
         .calculator-container {
-            margin-top: 6rem;
+            margin-top: 4rem;
             background: var(--card-background);
             padding: 2rem;
             border-radius: 20px;
             box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+            animation: fadeInUp 1s ease 0.4s;
+            animation-fill-mode: forwards;
+            opacity: 0;
             max-width: 1200px;
             width: 100%;
-            animation: fadeInUp 1s ease;
         }
 
-        .form-section h2 {
-            text-align: center;
-            margin-bottom: 2rem;
-            color: var(--primary-color);
+        .form-section {
+            background: var(--card-background);
+            padding: 2rem;
+            border-radius: 10px;
         }
 
         .form-grid {
             display: grid;
             grid-template-columns: repeat(3, 1fr);
             gap: 1.5rem;
+        }
+
+        .form-group {
+            margin-bottom: 1.5rem;
         }
 
         .form-group label {
@@ -138,6 +157,7 @@
             padding: 0.8rem;
             border: 2px solid #E2E8F0;
             border-radius: 5px;
+            font-family: 'Poppins', sans-serif;
             transition: border-color 0.3s ease;
         }
 
@@ -152,23 +172,6 @@
             margin-top: 2rem;
         }
 
-        .cta-button {
-            background: var(--gradient);
-            color: white;
-            padding: 1rem 2rem;
-            font-weight: 600;
-            font-size: 1rem;
-            border: none;
-            border-radius: 8px;
-            cursor: pointer;
-            transition: all 0.3s ease;
-        }
-
-        .cta-button:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
-        }
-
         .score-section {
             background: linear-gradient(135deg, rgba(139, 92, 246, 0.9), rgba(99, 102, 241, 0.9));
             padding: 2rem;
@@ -181,27 +184,31 @@
         }
 
         .score-circle {
-            width: 180px;
-            height: 180px;
+            width: 200px;
+            height: 200px;
             border-radius: 50%;
             background: rgba(255, 255, 255, 0.1);
             display: flex;
             align-items: center;
             justify-content: center;
             margin: 2rem auto;
-            font-size: 2.5rem;
+            font-size: 3rem;
             font-weight: 700;
             border: 4px solid rgba(255, 255, 255, 0.2);
+            color: white;
         }
 
         .score-label {
-            font-size: 1.3rem;
+            font-size: 1.5rem;
             margin-bottom: 1rem;
             font-weight: 600;
+            color: white;
         }
 
         .score-description {
-            font-size: 1rem;
+            font-size: 1.1rem;
+            color: white;
+            opacity: 0.9;
             max-width: 600px;
             margin: 0 auto;
             line-height: 1.6;
@@ -209,8 +216,17 @@
 
         .score-description ul {
             text-align: left;
-            padding-left: 1.2rem;
-            margin-top: 1rem;
+            max-width: 500px;
+            margin: 1rem auto;
+            padding-left: 1.5rem;
+        }
+
+        .score-description li {
+            margin-bottom: 0.5rem;
+        }
+
+        .score-description p {
+            margin-bottom: 1rem;
         }
 
         @media (max-width: 1024px) {
@@ -220,39 +236,31 @@
         }
 
         @media (max-width: 768px) {
-            body {
-                padding: 1rem;
-            }
-
             .form-grid {
                 grid-template-columns: 1fr;
             }
 
+            .welcome-text h1 {
+                font-size: 2.5rem;
+            }
+
+            .welcome-text p {
+                font-size: 1.1rem;
+            }
+
             .nav-bar {
                 flex-direction: column;
-                height: auto;
-                padding: 1rem 0.5rem;
+                gap: 1rem;
             }
 
             .nav-links {
                 flex-direction: column;
-                gap: 0.5rem;
+                align-items: center;
             }
 
             .logout-button {
                 position: static;
                 margin-top: 1rem;
-            }
-
-            .calculator-container {
-                margin-top: 8rem;
-                padding: 1rem;
-            }
-
-            .score-circle {
-                width: 140px;
-                height: 140px;
-                font-size: 2rem;
             }
         }
     </style>
@@ -272,43 +280,56 @@
             <h2>Calculate Your IRScore</h2>
             <form id="irscore-form" onsubmit="calculateIRScore(event)">
                 <div class="form-grid">
-                    <div class="form-group"><label for="age">Age</label><input type="number" id="age" required></div>
-                    <div class="form-group"><label for="gender">Gender</label>
-                        <select id="gender" required>
-                            <option value="">Select</option>
+                    <div class="form-group">
+                        <label for="age">Age</label>
+                        <input type="number" id="age" name="age" required min="0" max="150">
+                    </div>
+                    <div class="form-group">
+                        <label for="gender">Gender</label>
+                        <select id="gender" name="gender" required>
+                            <option value="">Select gender</option>
                             <option value="male">Male</option>
                             <option value="female">Female</option>
                             <option value="other">Other</option>
                         </select>
                     </div>
-                    <div class="form-group"><label for="weight">Weight (lbs)</label><input type="number" id="weight" required></div>
-                    <div class="form-group"><label for="height">Height (in.)</label><input type="number" id="height" required></div>
-                    <div class="form-group"><label for="sleep">Sleep Quality</label>
-                        <select id="sleep" required>
-                            <option value="">Select</option>
-                            <option value="excellent">Excellent</option>
-                            <option value="good">Good</option>
-                            <option value="fair">Fair</option>
-                            <option value="poor">Poor</option>
+                    <div class="form-group">
+                        <label for="weight">Weight (lbs)</label>
+                        <input type="number" id="weight" name="weight" required min="0" max="1000">
+                    </div>
+                    <div class="form-group">
+                        <label for="height">Height (in.)</label>
+                        <input type="number" id="height" name="height" required min="0" max="250">
+                    </div>
+                    <div class="form-group">
+                        <label for="sleep">Sleep Quality</label>
+                        <select id="sleep" name="sleep" required>
+                            <option value="">Select sleep quality</option>
+                            <option value="excellent">Excellent (7-9 hours, good quality)</option>
+                            <option value="good">Good (6-7 hours, moderate quality)</option>
+                            <option value="fair">Fair (5-6 hours, poor quality)</option>
+                            <option value="poor">Poor (<5 hours, very poor quality)</option>
                         </select>
                     </div>
-                    <div class="form-group"><label for="family-history">Family History</label>
-                        <select id="family-history" required>
-                            <option value="">Select</option>
-                            <option value="none">None</option>
-                            <option value="distant">Distant</option>
-                            <option value="close">Close</option>
-                            <option value="multiple">Multiple</option>
+                    <div class="form-group">
+                        <label for="family-history">Family History of Diabetes</label>
+                        <select id="family-history" name="family-history" required>
+                            <option value="">Select family history</option>
+                            <option value="none">No family history</option>
+                            <option value="distant">Distant relative (grandparent, aunt/uncle)</option>
+                            <option value="close">Close relative (parent, sibling)</option>
+                            <option value="multiple">Multiple close relatives</option>
                         </select>
                     </div>
-                    <div class="form-group"><label for="activity">Activity Level</label>
-                        <select id="activity" required>
-                            <option value="">Select</option>
-                            <option value="sedentary">Sedentary</option>
-                            <option value="light">Lightly Active</option>
-                            <option value="moderate">Moderate</option>
-                            <option value="very">Very Active</option>
-                            <option value="extra">Extra Active</option>
+                    <div class="form-group">
+                        <label for="activity">Activity Level</label>
+                        <select id="activity" name="activity" required>
+                            <option value="">Select activity level</option>
+                            <option value="sedentary">Sedentary (little or no exercise)</option>
+                            <option value="light">Lightly Active (light exercise 1-3 days/week)</option>
+                            <option value="moderate">Moderately Active (moderate exercise 3-5 days/week)</option>
+                            <option value="very">Very Active (hard exercise 6-7 days/week)</option>
+                            <option value="extra">Extra Active (very hard exercise & physical job)</option>
                         </select>
                     </div>
                 </div>
@@ -317,7 +338,6 @@
                 </div>
             </form>
         </div>
-
         <div class="score-section" id="score-section">
             <h2>Your IRScore</h2>
             <div class="score-circle" id="score-display">--</div>
@@ -328,8 +348,184 @@
         </div>
     </div>
 
-    <!-- Your JS remains unchanged -->
-    <!-- Continue with your existing <script> for form logic and TOS modal -->
+    <script>
+        // Check login status
+        function checkLogin() {
+            const isLoggedIn = localStorage.getItem('isLoggedIn') === 'true';
+            if (!isLoggedIn) {
+                window.location.href = 'index.html';
+                return false;
+            }
+            return true;
+        }
+
+        // Run check on page load
+        if (!checkLogin()) {
+            throw new Error('Not logged in');
+        }
+
+        function checkData(url) {
+            const userData = localStorage.getItem('irscoreData');
+            if (!userData) {
+                alert('Please complete the IRScore Calculator first to access this page.');
+                return false;
+            }
+            return true;
+        }
+
+        async function calculateIRScore(event) {
+    event.preventDefault();
+
+    const age = parseInt(document.getElementById('age').value);
+    const genderStr = document.getElementById('gender').value;
+    const gender = genderStr === 'male' ? 1 : 0;
+    const weight = parseFloat(document.getElementById('weight').value);
+    const height = parseFloat(document.getElementById('height').value);
+    const bmi = weight / (height ** 2) * 703;
+
+    // Extract all fields
+    const sleep = document.getElementById('sleep').value;
+    const family_history = document.getElementById('family-history').value;
+    const activity = document.getElementById('activity').value;
+
+    // Update payload
+    const payload = { age, gender, bmi, weight, height, sleep, family_history, activity };
+
+    try {
+        const response = await fetch('https://nexflowwebs.onrender.com/predict', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload)
+        });
+
+        if (!response.ok) throw new Error(`API request failed with status ${response.status}`);
+        const result = await response.json();
+
+        // Debugging: see what the backend returns
+        console.log('API result:', result);
+
+        let score;
+        if (result.body) {
+            const bodyData = typeof result.body === 'string' ? JSON.parse(result.body) : result.body;
+            score = bodyData.score;
+        } else if (result.score !== undefined) {
+            score = result.score;
+        } else {
+            throw new Error('Score not found in API response');
+        }
+
+        if (score === undefined || score === null) throw new Error('Invalid score value');
+
+        document.getElementById('score-display').textContent = Math.round(score);
+        const scoreLabel = document.getElementById('score-label');
+        const scoreDescription = document.getElementById('score-description');
+
+        // ... (rest of your score label logic)
+        if (score >= 81.8) {
+            scoreLabel.textContent = 'Excellent Metabolic Health - optimal insulin sensitivity and low risk';
+            scoreLabel.style.color = '#4ADE80';
+            scoreDescription.innerHTML = `<p>Great news! Your metabolic health is in excellent shape.</p>
+            <ul><li>Your body is very efficient at using insulin</li><li>Your blood sugar levels are well-regulated</li><li>Your metabolism is working optimally</li></ul>`;
+        } else if (score >= 71.1) {
+            scoreLabel.textContent = 'Good Metabolic Health - normal insulin sensitivity';
+            scoreLabel.style.color = '#FCD34D';
+            scoreDescription.innerHTML = `<p>Your metabolic health is in good shape, but there's room for improvement.</p>
+            <ul><li>Your body handles insulin well</li><li>Your blood sugar levels are generally stable</li><li>Small lifestyle changes could make a big difference</li></ul>`;
+        } else if (score >= 35.4) {
+            scoreLabel.textContent = 'Moderate Metabolic Health - intermediate risk of insulin resistance';
+            scoreLabel.style.color = '#FB923C';
+            scoreDescription.innerHTML = `<p>Your metabolic health needs some attention.</p>
+            <ul><li>Your body could be more efficient with insulin</li><li>Your blood sugar levels might fluctuate</li><li>Lifestyle changes could help</li></ul>`;
+        } else {
+            scoreLabel.textContent = 'Needs Attention - high risk of insulin resistance';
+            scoreLabel.style.color = '#F87171';
+            scoreDescription.innerHTML = `<p>Your metabolic health needs attention. But don't worry—changes can help!</p>
+            <ul><li>Your body may struggle with insulin efficiency</li><li>Your blood sugar levels might be unstable</li><li>Try consulting your doctor and improving lifestyle</li></ul>`;
+        }
+
+        document.getElementById('score-section').style.display = 'block';
+        document.getElementById('score-section').scrollIntoView({ behavior: 'smooth' });
+
+        localStorage.setItem('irscoreData', JSON.stringify({ age, gender, weight, height, bmi, sleep, family_history, activity, score }));
+    } catch (error) {
+        console.error('Error calculating IRScore:', error);
+        alert(`There was an error calculating your IRScore: ${error.message}. Please try again later.`);
+    }
+}
+
+
+        function handleLogout() {
+            // Clear all login-related data
+            localStorage.removeItem('isLoggedIn');
+            localStorage.removeItem('hasFullAccess');
+            localStorage.removeItem('irscoreData');
+            // Redirect to login page
+            window.location.href = 'index.html';
+        }
+        // TOS modal logic
+        function acceptTOS() {
+            localStorage.setItem('agreedToTOS', 'true');
+            document.getElementById('tos-modal').style.display = 'none';
+        }
+
+        window.addEventListener('load', () => {
+            const agreed = localStorage.getItem('agreedToTOS');
+            if (agreed !== 'true') {
+                document.getElementById('tos-modal').style.display = 'flex';
+            }
+        });
+    </script>
+    <!-- Terms of Service Modal -->
+<div id="tos-modal" style="
+    position: fixed;
+    top: 0; left: 0;
+    width: 100%; height: 100%;
+    background: rgba(0,0,0,0.7);
+    z-index: 9999;
+    display: none;
+    justify-content: center;
+    align-items: center;
+    padding: 2rem;
+">
+    <div style="
+        background: white;
+        color: black;
+        max-width: 800px;
+        max-height: 90vh;
+        overflow-y: auto;
+        border-radius: 12px;
+        padding: 2rem;
+        font-family: 'Poppins', sans-serif;
+        box-shadow: 0 8px 20px rgba(0,0,0,0.3);
+    ">
+        <h2 style="margin-top: 0;">Legal Disclaimer – NexFlow Closed Beta</h2>
+        <ol style="padding-left: 1.2rem; font-size: 0.95rem;">
+            <li><strong>Non-Medical Use Only</strong><br>NexFlow is for educational/informational use only. It is not a medical device.</li>
+            <li><strong>Not FDA-Approved</strong><br>NexFlow is not reviewed/approved by the FDA or any medical agency.</li>
+            <li><strong>No Clinical Use Permitted</strong><br>Do not use NexFlow for diagnosis or medical decisions.</li>
+            <li><strong>Beta Status & Reliability</strong><br>NexFlow is in closed beta and may be unreliable or incomplete.</li>
+            <li><strong>Limitation of Liability</strong><br>Use at your own risk. NexFlow is not liable for any damages.</li>
+            <li><strong>User Responsibility</strong><br>You are solely responsible for how you use the platform.</li>
+            <li><strong>Data Usage & Privacy</strong><br>We may collect anonymous usage data. No PHI is stored.</li>
+            <li><strong>Minors & Parental Consent</strong><br>If under 18, you need parental/guardian permission.</li>
+            <li><strong>Consent to Participate in Beta</strong><br>By continuing, you agree to join the beta program.</li>
+        </ol>
+        <p><strong>If you do not agree with these terms, please do not use the platform.</strong></p>
+        <div style="text-align: right; margin-top: 1.5rem;">
+            <button onclick="acceptTOS()" style="
+                padding: 0.6rem 1.2rem;
+                font-weight: bold;
+                font-size: 1rem;
+                border: none;
+                border-radius: 8px;
+                background: #6366F1;
+                color: white;
+                cursor: pointer;
+                transition: background 0.2s;
+            ">I Agree</button>
+        </div>
+    </div>
+</div>
 
 </body>
 </html>
