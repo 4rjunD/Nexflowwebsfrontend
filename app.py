@@ -10,7 +10,7 @@ from functools import wraps
 app = Flask(__name__, static_folder='.', static_url_path='')
 CORS(app, 
      resources={r"/*": {
-         "origins": ["http://127.0.0.1:5500", "http://localhost:5500", "https://www.nexflowai.app", "https://nexflowai.app"],
+         "origins": ["http://127.0.0.1:5500", "http://localhost:5500", "https://www.nexflowai.app", "https://nexflowai.app", "http://localhost:5000", "https://nexflowwebs.onrender.com"],
          "allow_credentials": True,
          "expose_headers": ["Content-Type", "Authorization"],
          "methods": ["GET", "POST", "PUT", "DELETE", "OPTIONS"]
@@ -58,7 +58,11 @@ def token_required(f):
 # Serve static files
 @app.route('/')
 def serve_index():
-    return send_from_directory('.', 'index.html')
+    return jsonify({"message": "Backend server is running"})
+
+@app.route('/test')
+def test():
+    return jsonify({"message": "Test endpoint is working"})
 
 @app.route('/<path:path>')
 def serve_static(path):
@@ -207,6 +211,14 @@ def db_check():
             'error': str(e),
             'database_type': 'postgresql' if 'postgresql' in app.config['SQLALCHEMY_DATABASE_URI'] else 'sqlite'
         }), 500
+
+# Add CORS headers to all responses
+@app.after_request
+def after_request(response):
+    response.headers.add('Access-Control-Allow-Origin', '*')
+    response.headers.add('Access-Control-Allow-Headers', 'Content-Type,Authorization')
+    response.headers.add('Access-Control-Allow-Methods', 'GET,PUT,POST,DELETE,OPTIONS')
+    return response
 
 # Create database tables
 with app.app_context():
