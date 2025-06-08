@@ -174,6 +174,40 @@ def health_check():
             'error': str(e)
         }), 500
 
+@app.route('/api/db-check', methods=['GET'])
+def db_check():
+    try:
+        # Get database URL without credentials
+        db_url = app.config['SQLALCHEMY_DATABASE_URI']
+        if db_url.startswith('postgresql://'):
+            # Mask the password in the URL
+            masked_url = db_url.split('@')[0].split(':')
+            if len(masked_url) > 2:
+                masked_url[2] = '****'
+            masked_url = ':'.join(masked_url) + '@' + db_url.split('@')[1]
+        else:
+            masked_url = 'sqlite:///users.db'  # Local development
+
+        # Try to query the database
+        db.session.execute('SELECT 1')
+        
+        # Try to get user count
+        user_count = User.query.count()
+        
+        return jsonify({
+            'status': 'connected',
+            'database_type': 'postgresql' if 'postgresql' in db_url else 'sqlite',
+            'database_url_masked': masked_url,
+            'user_count': user_count,
+            'tables_created': True
+        }), 200
+    except Exception as e:
+        return jsonify({
+            'status': 'error',
+            'error': str(e),
+            'database_type': 'postgresql' if 'postgresql' in app.config['SQLALCHEMY_DATABASE_URI'] else 'sqlite'
+        }), 500
+
 # Create database tables
 with app.app_context():
     db.create_all()
