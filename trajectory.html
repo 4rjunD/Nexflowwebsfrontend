@@ -200,20 +200,37 @@
         .toggle-item input[type="range"] {
             width: 100%;
             height: 6px;
+            appearance: none;
             -webkit-appearance: none;
+            -moz-appearance: none;
             background: #E5E7EB;
             border-radius: 3px;
             outline: none;
         }
 
         .toggle-item input[type="range"]::-webkit-slider-thumb {
+            appearance: none;
             -webkit-appearance: none;
+            -moz-appearance: none;
             width: 20px;
             height: 20px;
             background: var(--primary-color);
             border-radius: 50%;
             cursor: pointer;
             transition: all 0.3s ease;
+        }
+
+        .toggle-item input[type="range"]::-moz-range-thumb {
+            appearance: none;
+            -webkit-appearance: none;
+            -moz-appearance: none;
+            width: 20px;
+            height: 20px;
+            background: var(--primary-color);
+            border-radius: 50%;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            border: none;
         }
 
         .toggle-item input[type="range"]::-webkit-slider-thumb:hover {

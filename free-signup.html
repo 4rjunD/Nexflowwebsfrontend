@@ -141,13 +141,18 @@
 
         .login-link {
             display: block;
-            color: var(--primary-color);
+            color: #6B7280;
             text-decoration: none;
             margin-top: 1rem;
-            font-size: 0.9rem;
+            font-size: 0.96rem;
         }
 
-        .login-link:hover {
+        .login-link a {
+            color: var(--primary-color);
+            text-decoration: none;
+        }
+
+        .login-link a:hover {
             text-decoration: underline;
         }
 
@@ -169,18 +174,82 @@
             margin-bottom: 1rem;
         }
 
-        .upgrade-button {
-            background: #E5E7EB;
+        .pricing-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 1.5rem;
+            margin: 1.5rem 0;
+        }
+
+        .pricing-card {
+            background: white;
+            border: 2px solid #E5E7EB;
+            border-radius: 12px;
+            padding: 1.5rem;
+            text-align: left;
+            transition: all 0.3s ease;
+        }
+
+        .pricing-card:hover {
+            border-color: var(--primary-color);
+            transform: translateY(-2px);
+        }
+
+        .pricing-card h4 {
+            color: var(--primary-color);
+            font-size: 1.2rem;
+            margin-bottom: 1rem;
+        }
+
+        .pricing-card .price {
+            font-size: 1.5rem;
+            font-weight: 600;
+            color: #1F2937;
+            margin-bottom: 1rem;
+        }
+
+        .pricing-card ul {
+            list-style: none;
+            margin-bottom: 1.5rem;
+        }
+
+        .pricing-card li {
+            margin-bottom: 0.5rem;
             color: #4B5563;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .pricing-card li::before {
+            content: '✓';
+            color: var(--primary-color);
+            font-weight: bold;
+        }
+
+        .upgrade-button {
+            background: var(--gradient);
+            color: white;
             border: none;
             padding: 0.8rem 1.5rem;
             border-radius: 8px;
             font-size: 0.9rem;
             cursor: pointer;
+            width: 100%;
             transition: all 0.3s ease;
         }
 
         .upgrade-button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+
+        .upgrade-button.secondary {
+            background: #E5E7EB;
+            color: #4B5563;
+        }
+
+        .upgrade-button.secondary:hover {
             background: #D1D5DB;
         }
 
@@ -230,87 +299,106 @@
                 <div class="error-message" id="confirm-password-error"></div>
             </div>
             <button type="submit" class="signup-button">Create Free Account</button>
-            <a href="index.html" class="login-link">Already have an account? Log in</a>
+            <div class="login-link">Already have an account? <a href="index.html">Log in</a></div>
         </form>
         <div class="upgrade-link">
-            <p>Want unlimited access to all features?</p>
-            <button onclick="window.location.href='pricing.html'" class="upgrade-button">View Pro Plans</button>
+            <p>Upgrade to Pro for Unlimited Access</p>
+            <div class="pricing-grid">
+                <div class="pricing-card">
+                    <h4>Pro Plan</h4>
+                    <div class="price">$5.99/month</div>
+                    <ul>
+                        <li>Unlimited IRScore calculations</li>
+                        <li>Personalized recommendations</li>
+                        <li>Advanced trajectory analysis</li>
+                        <li>Comprehensive health tracking</li>
+                        <li>Historical data access</li>
+                        <li>Detailed insights and trends</li>
+                        <li>Progress monitoring</li>
+                        <li>Priority support</li>
+                    </ul>
+                    <button onclick="upgradeToPro('monthly')" class="upgrade-button">Upgrade Now</button>
+                </div>
+            </div>
         </div>
     </div>
 
     <script>
-        function handleSignup(event) {
+        async function handleSignup(event) {
             event.preventDefault();
             
-            // Get form values
             const name = document.getElementById('name').value;
             const email = document.getElementById('email').value;
             const password = document.getElementById('password').value;
             const confirmPassword = document.getElementById('confirm-password').value;
+            const errorElement = document.getElementById('email-error');
             
-            // Reset error messages
-            document.querySelectorAll('.error-message').forEach(el => el.style.display = 'none');
-            
-            // Validate email format
-            const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-            if (!emailRegex.test(email)) {
-                document.getElementById('email-error').textContent = 'Please enter a valid email address';
-                document.getElementById('email-error').style.display = 'block';
-                return;
-            }
-            
-            // Validate password length
-            if (password.length < 8) {
-                document.getElementById('password-error').textContent = 'Password must be at least 8 characters long';
-                document.getElementById('password-error').style.display = 'block';
-                return;
-            }
-            
-            // Check if passwords match
             if (password !== confirmPassword) {
                 document.getElementById('confirm-password-error').textContent = 'Passwords do not match';
                 document.getElementById('confirm-password-error').style.display = 'block';
                 return;
             }
-            
-            // Get existing users or initialize empty array
-            const users = JSON.parse(localStorage.getItem('users') || '[]');
-            
-            // Check if email already exists
-            if (users.some(user => user.email === email)) {
-                document.getElementById('email-error').textContent = 'This email is already registered';
-                document.getElementById('email-error').style.display = 'block';
-                return;
+
+            try {
+                console.log('Attempting to sign up with:', { name, email });
+                
+                const response = await fetch('https://www.nexflowai.app/api/signup', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Accept': 'application/json'
+                    },
+                    mode: 'cors',
+                    credentials: 'include',
+                    body: JSON.stringify({ name, email, password })
+                });
+
+                console.log('Response status:', response.status);
+                
+                const data = await response.json();
+                console.log('Response data:', data);
+
+                if (response.ok) {
+                    localStorage.setItem('isLoggedIn', 'true');
+                    localStorage.setItem('userEmail', email);
+                    window.location.href = 'irscore.html';
+                } else {
+                    errorElement.textContent = data.message || 'Error creating account';
+                    errorElement.style.display = 'block';
+                }
+            } catch (error) {
+                console.error('Signup error:', error);
+                errorElement.textContent = `Error: ${error.message}. Please check your internet connection and try again.`;
+                errorElement.style.display = 'block';
             }
-            
-            // Add new user with free plan
-            users.push({
-                name,
-                email,
-                password: btoa(password),
-                hasFullAccess: false,
-                lastCalculationDate: null,
-                plan: 'free'
-            });
-            
-            // Save updated users array
-            localStorage.setItem('users', JSON.stringify(users));
-            
-            // Set current user
-            localStorage.setItem('currentUser', JSON.stringify({
-                name,
-                email,
-                hasFullAccess: false,
-                lastCalculationDate: null,
-                plan: 'free'
-            }));
-            
-            // Set login status
-            localStorage.setItem('isLoggedIn', 'true');
-            localStorage.setItem('hasFullAccess', 'false');
-            
-            // Redirect to calculator
-            window.location.href = 'irscore.html';
+        }
+
+        async function upgradeToPro(plan) {
+            try {
+                const response = await fetch('https://www.nexflowai.app/api/upgrade-to-pro', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Accept': 'application/json'
+                    },
+                    mode: 'cors',
+                    credentials: 'include',
+                    body: JSON.stringify({ plan })
+                });
+
+                const data = await response.json();
+
+                if (response.ok) {
+                    // Redirect to payment page or show success message
+                    alert('Redirecting to payment page...');
+                    // Add your payment integration here
+                } else {
+                    alert(data.message || 'Error upgrading to pro');
+                }
+            } catch (error) {
+                console.error('Upgrade error:', error);
+                alert('Error processing upgrade. Please try again.');
+            }
         }
     </script>
 </body>
