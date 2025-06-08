@@ -205,13 +205,16 @@
             </div>
             <button type="submit" class="login-button">Login</button>
             <a href="#" class="forgot-password">Forgot password?</a>
+            <div class="signup-link" style="margin-top: 1rem; border-top: none;">
+                <p>Don't have an account? <a href="#" onclick="showSignupForm()">Sign Up</a></p>
+            </div>
         </form>
         <div class="demo-login">
             <p>Want to try it out?</p>
             <button onclick="handleDemoLogin()" class="demo-button">Try Demo Version</button>
         </div>
         <div class="signup-link">
-            <p>Don't have an account? <a href="#" onclick="showSignupForm()">Sign Up</a></p>
+            <p>Ready to unlock full access? <a href="pricing.html">View Pro Plans</a></p>
         </div>
     </div>
 
@@ -271,15 +274,23 @@
             const errorElement = document.getElementById('email-error');
             
             try {
-                const response = await fetch('https://nexflowwebs.onrender.com/login', {
+                console.log('Attempting to login with:', { email }); // Log attempt
+                
+                const response = await fetch('https://www.nexflowai.app/login', {
                     method: 'POST',
                     headers: {
-                        'Content-Type': 'application/json'
+                        'Content-Type': 'application/json',
+                        'Accept': 'application/json'
                     },
+                    mode: 'cors',
+                    credentials: 'same-origin',
                     body: JSON.stringify({ email, password })
                 });
 
+                console.log('Response status:', response.status); // Log response status
+                
                 const data = await response.json();
+                console.log('Response data:', data); // Log response data
 
                 if (response.ok) {
                     localStorage.setItem('isLoggedIn', 'true');
@@ -290,7 +301,8 @@
                     errorElement.style.display = 'block';
                 }
             } catch (error) {
-                errorElement.textContent = 'An error occurred. Please try again.';
+                console.error('Login error:', error); // Log detailed error
+                errorElement.textContent = `Error: ${error.message}. Please check your internet connection and try again.`;
                 errorElement.style.display = 'block';
             }
         }
@@ -313,11 +325,14 @@
             try {
                 console.log('Attempting to sign up with:', { name, email }); // Log attempt
                 
-                const response = await fetch('https://nexflowwebs.onrender.com/signup', {
+                const response = await fetch('https://www.nexflowai.app/api/signup', {
                     method: 'POST',
                     headers: {
-                        'Content-Type': 'application/json'
+                        'Content-Type': 'application/json',
+                        'Accept': 'application/json'
                     },
+                    mode: 'cors',
+                    credentials: 'same-origin',
                     body: JSON.stringify({ name, email, password })
                 });
 

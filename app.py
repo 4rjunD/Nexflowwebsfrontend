@@ -8,7 +8,14 @@ import jwt
 from functools import wraps
 
 app = Flask(__name__, static_folder='.', static_url_path='')
-CORS(app, supports_credentials=True)
+CORS(app, 
+     resources={r"/*": {
+         "origins": ["http://127.0.0.1:5500", "http://localhost:5500", "https://www.nexflowai.app", "https://nexflowai.app"],
+         "allow_credentials": True,
+         "expose_headers": ["Content-Type", "Authorization"],
+         "methods": ["GET", "POST", "PUT", "DELETE", "OPTIONS"]
+     }},
+     supports_credentials=True)
 
 # Configuration
 app.config['SECRET_KEY'] = os.environ.get('SECRET_KEY', os.urandom(24))
