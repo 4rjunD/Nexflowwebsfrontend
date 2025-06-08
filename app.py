@@ -158,6 +158,22 @@ def upgrade_to_pro(current_user):
     
     return jsonify({'message': 'Upgraded to pro successfully'})
 
+@app.route('/api/health', methods=['GET'])
+def health_check():
+    try:
+        # Try to query the database
+        db.session.execute('SELECT 1')
+        return jsonify({
+            'status': 'healthy',
+            'database': 'connected'
+        }), 200
+    except Exception as e:
+        return jsonify({
+            'status': 'unhealthy',
+            'database': 'disconnected',
+            'error': str(e)
+        }), 500
+
 # Create database tables
 with app.app_context():
     db.create_all()
