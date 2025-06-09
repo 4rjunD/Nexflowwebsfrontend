@@ -325,9 +325,8 @@
 
     <script>
         // API URL configuration
-        const API_BASE_URL = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1'
-            ? 'http://localhost:5000'
-            : 'https://nexflowwebs.onrender.com';
+        const API_BASE_URL = window.location.origin;
+
 
         async function handleSignup(event) {
             event.preventDefault();
@@ -347,14 +346,13 @@
             try {
                 console.log('Attempting to sign up with:', { name, email });
                 
-                const response = await fetch(`${API_BASE_URL}/api/signup`, {
+                const response = await fetch('/api/signup', {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
                         'Accept': 'application/json'
                     },
-                    mode: 'cors',
-                    credentials: 'include',
+                    credentials: 'include', // only keep if using cookies/session
                     body: JSON.stringify({ name, email, password })
                 });
 
@@ -380,16 +378,16 @@
 
         async function upgradeToPro(plan) {
             try {
-                const response = await fetch(`${API_BASE_URL}/api/upgrade-to-pro`, {
+                const response = await fetch('/api/upgrade-to-pro', {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
                         'Accept': 'application/json'
                     },
-                    mode: 'cors',
                     credentials: 'include',
                     body: JSON.stringify({ plan })
                 });
+
 
                 const data = await response.json();
 
