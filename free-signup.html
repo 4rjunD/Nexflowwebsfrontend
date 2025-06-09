@@ -325,7 +325,8 @@
 
     <script>
         // API URL configuration
-        const API_BASE_URL = window.location.origin;
+        const API_BASE_URL = "https://nexflowwebs.onrender.com";
+
 
 
         async function handleSignup(event) {
@@ -346,11 +347,11 @@
             try {
                 console.log('Attempting to sign up with:', { name, email });
                 
-                const response = await fetch('/api/signup', {
+                const response = await fetch('${API_BASE_URL}/api/signup', {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
-                        'Accept': 'application/json'
+                        //'Accept': 'application/json'
                     },
                     credentials: 'include', // only keep if using cookies/session
                     body: JSON.stringify({ name, email, password })
@@ -378,11 +379,11 @@
 
         async function upgradeToPro(plan) {
             try {
-                const response = await fetch('/api/upgrade-to-pro', {
+                const response = await fetch('${API_BASE_URL}/api/upgrade-to-pro', {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
-                        'Accept': 'application/json'
+                        //'Accept': 'application/json'
                     },
                     credentials: 'include',
                     body: JSON.stringify({ plan })
