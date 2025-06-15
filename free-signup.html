@@ -280,7 +280,7 @@
         </div>
         <form id="signup-form" onsubmit="handleSignup(event)">
             <div class="form-group">
-                <label for="name">Full Name</label>
+                <label for="name">Full Name 7:46</label>
                 <input type="text" id="name" name="name" required placeholder="Enter your full name">
             </div>
             <div class="form-group">
@@ -347,7 +347,7 @@
             try {
                 console.log('Attempting to sign up with:', { name, email });
                 
-                const response = await fetch('${API_BASE_URL}/api/signup', {
+                const response = await fetch(`${API_BASE_URL}/api/signup`, {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
@@ -359,7 +359,13 @@
 
                 console.log('Response status:', response.status);
                 
-                const data = await response.json();
+                let data;
+                try {
+                    const text = await response.text();
+                    data = text ? JSON.parse(text) : {};
+                } catch {
+                    data = {};
+                }
                 console.log('Response data:', data);
 
                 if (response.ok) {
@@ -379,7 +385,7 @@
 
         async function upgradeToPro(plan) {
             try {
-                const response = await fetch('${API_BASE_URL}/api/upgrade-to-pro', {
+                const response = await fetch(`${API_BASE_URL}/api/upgrade-to-pro`, {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
