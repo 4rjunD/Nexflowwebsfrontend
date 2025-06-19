@@ -406,13 +406,57 @@
         </div>
     </div>
 
-    <!-- Popup Modal -->
-    <div id="popup-modal" style="display:none; position:fixed; top:0; left:0; width:100vw; height:100vh; background:rgba(0,0,0,0.4); z-index:10000; justify-content:center; align-items:center;">
-        <div style="background:white; color:#2D3748; border-radius:12px; padding:2rem; min-width:300px; max-width:90vw; box-shadow:0 8px 32px rgba(0,0,0,0.25); text-align:center; position:relative;">
-            <span id="popup-message"></span>
-            <button onclick="closePopup()" style="margin-top:1.5rem; padding:0.6rem 1.5rem; background:var(--primary-color); color:white; border:none; border-radius:8px; font-weight:500; font-size:1rem; cursor:pointer;">OK</button>
+    <!-- Terms of Service Modal -->
+<div id="tos-modal" style="
+    position: fixed;
+    top: 0; left: 0;
+    width: 100%; height: 100%;
+    background: rgba(0,0,0,0.7);
+    z-index: 9999;
+    display: none;
+    justify-content: center;
+    align-items: center;
+    padding: 2rem;
+">
+    <div style="
+        background: white;
+        color: black;
+        max-width: 800px;
+        max-height: 90vh;
+        overflow-y: auto;
+        border-radius: 12px;
+        padding: 2rem;
+        font-family: 'Poppins', sans-serif;
+        box-shadow: 0 8px 20px rgba(0,0,0,0.3);
+    ">
+        <h2 style="margin-top: 0;">Legal Disclaimer – NexFlow Closed Beta</h2>
+        <ol style="padding-left: 1.2rem; font-size: 0.95rem;">
+            <li><strong>Non-Medical Use Only</strong><br>NexFlow is for educational/informational use only. It is not a medical device.</li>
+            <li><strong>Not FDA-Approved</strong><br>NexFlow is not reviewed/approved by the FDA or any medical agency.</li>
+            <li><strong>No Clinical Use Permitted</strong><br>Do not use NexFlow for diagnosis or medical decisions.</li>
+            <li><strong>Beta Status & Reliability</strong><br>NexFlow is in closed beta and may be unreliable or incomplete.</li>
+            <li><strong>Limitation of Liability</strong><br>Use at your own risk. NexFlow is not liable for any damages.</li>
+            <li><strong>User Responsibility</strong><br>You are solely responsible for how you use the platform.</li>
+            <li><strong>Data Usage & Privacy</strong><br>We may collect anonymous usage data. No PHI is stored.</li>
+            <li><strong>Minors & Parental Consent</strong><br>If under 18, you need parental/guardian permission.</li>
+            <li><strong>Consent to Participate in Beta</strong><br>By continuing, you agree to join the beta program.</li>
+        </ol>
+        <p><strong>If you do not agree with these terms, please do not use the platform.</strong></p>
+        <div style="text-align: right; margin-top: 1.5rem;">
+            <button onclick="acceptTOS()" style="
+                padding: 0.6rem 1.2rem;
+                font-weight: bold;
+                font-size: 1rem;
+                border: none;
+                border-radius: 8px;
+                background: #6366F1;
+                color: white;
+                cursor: pointer;
+                transition: background 0.2s;
+            ">I Agree</button>
         </div>
     </div>
+</div>
 
     <script>
         // Check login status
@@ -433,7 +477,7 @@
         function checkData(url) {
             const userData = localStorage.getItem('irscoreData');
             if (!userData) {
-                showPopup('Please complete the IRScore Calculator first to access this page.');
+                alert('Please complete the IRScore Calculator first to access this page.');
                 return false;
             }
             return true;
@@ -527,7 +571,7 @@
                 localStorage.setItem('irscoreData', JSON.stringify({ age, gender, weight, height, bmi, sleep, family_history, activity, score }));
             } catch (error) {
                 console.error('Error calculating IRScore:', error);
-                showPopup(`There was an error calculating your IRScore: ${error.message}. Please try again later.`);
+                alert(`There was an error calculating your IRScore: ${error.message}. Please try again later.`);
             } finally {
                 // Hide loading overlay and clear timer
                 clearInterval(timerInterval);
@@ -555,68 +599,6 @@
                 document.getElementById('tos-modal').style.display = 'flex';
             }
         });
-
-        function showPopup(message) {
-            var modal = document.getElementById('popup-modal');
-            var msg = document.getElementById('popup-message');
-            msg.textContent = message;
-            modal.style.display = 'flex';
-        }
-        function closePopup() {
-            document.getElementById('popup-modal').style.display = 'none';
-        }
     </script>
-    <!-- Terms of Service Modal -->
-<div id="tos-modal" style="
-    position: fixed;
-    top: 0; left: 0;
-    width: 100%; height: 100%;
-    background: rgba(0,0,0,0.7);
-    z-index: 9999;
-    display: none;
-    justify-content: center;
-    align-items: center;
-    padding: 2rem;
-">
-    <div style="
-        background: white;
-        color: black;
-        max-width: 800px;
-        max-height: 90vh;
-        overflow-y: auto;
-        border-radius: 12px;
-        padding: 2rem;
-        font-family: 'Poppins', sans-serif;
-        box-shadow: 0 8px 20px rgba(0,0,0,0.3);
-    ">
-        <h2 style="margin-top: 0;">Legal Disclaimer – NexFlow Closed Beta</h2>
-        <ol style="padding-left: 1.2rem; font-size: 0.95rem;">
-            <li><strong>Non-Medical Use Only</strong><br>NexFlow is for educational/informational use only. It is not a medical device.</li>
-            <li><strong>Not FDA-Approved</strong><br>NexFlow is not reviewed/approved by the FDA or any medical agency.</li>
-            <li><strong>No Clinical Use Permitted</strong><br>Do not use NexFlow for diagnosis or medical decisions.</li>
-            <li><strong>Beta Status & Reliability</strong><br>NexFlow is in closed beta and may be unreliable or incomplete.</li>
-            <li><strong>Limitation of Liability</strong><br>Use at your own risk. NexFlow is not liable for any damages.</li>
-            <li><strong>User Responsibility</strong><br>You are solely responsible for how you use the platform.</li>
-            <li><strong>Data Usage & Privacy</strong><br>We may collect anonymous usage data. No PHI is stored.</li>
-            <li><strong>Minors & Parental Consent</strong><br>If under 18, you need parental/guardian permission.</li>
-            <li><strong>Consent to Participate in Beta</strong><br>By continuing, you agree to join the beta program.</li>
-        </ol>
-        <p><strong>If you do not agree with these terms, please do not use the platform.</strong></p>
-        <div style="text-align: right; margin-top: 1.5rem;">
-            <button onclick="acceptTOS()" style="
-                padding: 0.6rem 1.2rem;
-                font-weight: bold;
-                font-size: 1rem;
-                border: none;
-                border-radius: 8px;
-                background: #6366F1;
-                color: white;
-                cursor: pointer;
-                transition: background 0.2s;
-            ">I Agree</button>
-        </div>
-    </div>
-</div>
-
 </body>
 </html>
