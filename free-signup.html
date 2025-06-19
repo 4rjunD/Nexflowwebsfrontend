@@ -317,10 +317,18 @@
                         <li>Progress monitoring</li>
                         <li>Priority support</li>
                     </ul>
-                    <button onclick="upgradeToPro('monthly')" class="upgrade-button">Upgrade Now</button>
+                    <button onclick="window.location.href='signup.html'" class="upgrade-button">Upgrade Now</button>
                 </div>
             </div>
         </div>
+    </div>
+
+    <!-- Popup Modal -->
+    <div id="popup-modal" style="display:none; position:fixed; top:0; left:0; width:100vw; height:100vh; background:rgba(0,0,0,0.4); z-index:10000; justify-content:center; align-items:center;">
+      <div style="background:white; color:#2D3748; border-radius:12px; padding:2rem; min-width:300px; max-width:90vw; box-shadow:0 8px 32px rgba(0,0,0,0.25); text-align:center; position:relative;">
+        <span id="popup-message"></span>
+        <button onclick="closePopup()" style="margin-top:1.5rem; padding:0.6rem 1.5rem; background:var(--primary-color); color:white; border:none; border-radius:8px; font-weight:500; font-size:1rem; cursor:pointer;">OK</button>
+      </div>
     </div>
 
     <script>
@@ -400,15 +408,13 @@
                 const data = await response.json();
 
                 if (response.ok) {
-                    // Redirect to payment page or show success message
-                    alert('Redirecting to payment page...');
-                    // Add your payment integration here
+                    showPopup('Redirecting to payment page...');
                 } else {
-                    alert(data.message || 'Error upgrading to pro');
+                    showPopup(data.message || 'Error upgrading to pro');
                 }
             } catch (error) {
                 console.error('Upgrade error:', error);
-                alert('Error processing upgrade. Please try again.');
+                showPopup('Error processing upgrade. Please try again.');
             }
         }
 
@@ -418,6 +424,16 @@
         }
         function closeTOSModal() {
             document.getElementById('tos-modal').style.display = 'none';
+        }
+
+        function showPopup(message) {
+          var modal = document.getElementById('popup-modal');
+          var msg = document.getElementById('popup-message');
+          msg.textContent = message;
+          modal.style.display = 'flex';
+        }
+        function closePopup() {
+          document.getElementById('popup-modal').style.display = 'none';
         }
     </script>
 

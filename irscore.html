@@ -406,6 +406,14 @@
         </div>
     </div>
 
+    <!-- Popup Modal -->
+    <div id="popup-modal" style="display:none; position:fixed; top:0; left:0; width:100vw; height:100vh; background:rgba(0,0,0,0.4); z-index:10000; justify-content:center; align-items:center;">
+        <div style="background:white; color:#2D3748; border-radius:12px; padding:2rem; min-width:300px; max-width:90vw; box-shadow:0 8px 32px rgba(0,0,0,0.25); text-align:center; position:relative;">
+            <span id="popup-message"></span>
+            <button onclick="closePopup()" style="margin-top:1.5rem; padding:0.6rem 1.5rem; background:var(--primary-color); color:white; border:none; border-radius:8px; font-weight:500; font-size:1rem; cursor:pointer;">OK</button>
+        </div>
+    </div>
+
     <script>
         // Check login status
         function checkLogin() {
@@ -425,7 +433,7 @@
         function checkData(url) {
             const userData = localStorage.getItem('irscoreData');
             if (!userData) {
-                alert('Please complete the IRScore Calculator first to access this page.');
+                showPopup('Please complete the IRScore Calculator first to access this page.');
                 return false;
             }
             return true;
@@ -519,7 +527,7 @@
                 localStorage.setItem('irscoreData', JSON.stringify({ age, gender, weight, height, bmi, sleep, family_history, activity, score }));
             } catch (error) {
                 console.error('Error calculating IRScore:', error);
-                alert(`There was an error calculating your IRScore: ${error.message}. Please try again later.`);
+                showPopup(`There was an error calculating your IRScore: ${error.message}. Please try again later.`);
             } finally {
                 // Hide loading overlay and clear timer
                 clearInterval(timerInterval);
@@ -547,6 +555,16 @@
                 document.getElementById('tos-modal').style.display = 'flex';
             }
         });
+
+        function showPopup(message) {
+            var modal = document.getElementById('popup-modal');
+            var msg = document.getElementById('popup-message');
+            msg.textContent = message;
+            modal.style.display = 'flex';
+        }
+        function closePopup() {
+            document.getElementById('popup-modal').style.display = 'none';
+        }
     </script>
     <!-- Terms of Service Modal -->
 <div id="tos-modal" style="
