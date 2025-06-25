@@ -217,11 +217,65 @@
       </div>
       <div class="terms">
         <input type="checkbox" id="terms" required />
-        <label for="terms">I agree to the <a href="#">Terms of Service</a> and <a href="#">Privacy Policy</a></label>
+        <label for="terms">I agree to the <a style="color: var(--primary-color); text-decoration: none; cursor:pointer;" onclick="showTOSModal(event)">Terms of Service</a> and <a style="color: var(--primary-color); text-decoration: none; cursor:pointer;" onclick="showTOSModal(event)">Privacy Policy</a></label>
       </div>
       <button type="submit" class="signup-button">Start Pro Plan - $5.99/month</button>
       <a href="pricing.html" class="login-link">View all plans</a>
     </form>
+  </div>
+
+  <!-- Terms of Service Modal (copied from irscore.html) -->
+  <div id="tos-modal" style="
+      position: fixed;
+      top: 0; left: 0;
+      width: 100%; height: 100%;
+      background: rgba(0,0,0,0.7);
+      z-index: 9999;
+      display: none;
+      justify-content: center;
+      align-items: center;
+      padding: 2rem;
+  ">
+      <div style="
+          background: white;
+          color: black;
+          max-width: 800px;
+          max-height: 90vh;
+          overflow-y: auto;
+          border-radius: 12px;
+          padding: 2rem;
+          font-family: 'Poppins', sans-serif;
+          box-shadow: 0 8px 20px rgba(0,0,0,0.3);
+          position: relative;
+      ">
+          <button onclick="closeTOSModal()" style="position: absolute; top: 1rem; right: 1rem; background: none; border: none; font-size: 1.5rem; cursor: pointer;">&times;</button>
+          <h2 style="margin-top: 0;">Legal Disclaimer – NexFlow Closed Beta</h2>
+          <ol style="padding-left: 1.2rem; font-size: 0.95rem;">
+              <li><strong>Non-Medical Use Only</strong><br>NexFlow is for educational/informational use only. It is not a medical device.</li>
+              <li><strong>Not FDA-Approved</strong><br>NexFlow is not reviewed/approved by the FDA or any medical agency.</li>
+              <li><strong>No Clinical Use Permitted</strong><br>Do not use NexFlow for diagnosis or medical decisions.</li>
+              <li><strong>Beta Status & Reliability</strong><br>NexFlow is in closed beta and may be unreliable or incomplete.</li>
+              <li><strong>Limitation of Liability</strong><br>Use at your own risk. NexFlow is not liable for any damages.</li>
+              <li><strong>User Responsibility</strong><br>You are solely responsible for how you use the platform.</li>
+              <li><strong>Data Usage & Privacy</strong><br>We may collect anonymous usage data. No PHI is stored.</li>
+              <li><strong>Minors & Parental Consent</strong><br>If under 18, you need parental/guardian permission.</li>
+              <li><strong>Consent to Participate in Beta</strong><br>By continuing, you agree to join the beta program.</li>
+          </ol>
+          <p><strong>If you do not agree with these terms, please do not use the platform.</strong></p>
+          <div style="text-align: right; margin-top: 1.5rem;">
+              <button onclick="closeTOSModal()" style="
+                  padding: 0.6rem 1.2rem;
+                  font-weight: bold;
+                  font-size: 1rem;
+                  border: none;
+                  border-radius: 8px;
+                  background: #6366F1;
+                  color: white;
+                  cursor: pointer;
+                  transition: background 0.2s;
+              ">Close</button>
+          </div>
+      </div>
   </div>
 
   <script>
@@ -278,6 +332,14 @@
         document.getElementById('email-error').textContent = 'Network error. Try again.';
         document.getElementById('email-error').style.display = 'block';
       }
+    }
+
+    function showTOSModal(event) {
+      event.preventDefault();
+      document.getElementById('tos-modal').style.display = 'flex';
+    }
+    function closeTOSModal() {
+      document.getElementById('tos-modal').style.display = 'none';
     }
   </script>
 </body>

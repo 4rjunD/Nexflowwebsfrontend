@@ -253,6 +253,24 @@
             background: #D1D5DB;
         }
 
+        .terms {
+            margin: 1.5rem 0;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            color: #4B5563;
+            font-size: 0.9rem;
+        }
+
+        .terms a {
+            color: var(--primary-color);
+            text-decoration: none;
+        }
+
+        .terms a:hover {
+            text-decoration: underline;
+        }
+
         @media (max-width: 480px) {
             .signup-container {
                 padding: 2rem;
@@ -297,6 +315,10 @@
                 <label for="confirm-password">Confirm Password</label>
                 <input type="password" id="confirm-password" name="confirm-password" required placeholder="Confirm your password">
                 <div class="error-message" id="confirm-password-error"></div>
+            </div>
+            <div class="terms">
+                <input type="checkbox" id="terms" required />
+                <label for="terms">I agree to the <a style="color: var(--primary-color); text-decoration: none; cursor:pointer;" onclick="showTOSModal(event)">Terms of Service</a> and <a style="color: var(--primary-color); text-decoration: none; cursor:pointer;" onclick="showTOSModal(event)">Privacy Policy</a></label>
             </div>
             <button type="submit" class="signup-button">Create Free Account</button>
             <div class="login-link">Already have an account? <a href="index.html">Log in</a></div>

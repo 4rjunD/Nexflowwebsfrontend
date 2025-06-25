@@ -21,8 +21,49 @@
         
         // Check for full access
         if (localStorage.getItem('hasFullAccess') !== 'true') {
-            alert('This feature is only available with a full account. Please log in to access the Trajectory Panel.');
-            window.location.replace('irscore.html');
+            document.addEventListener('DOMContentLoaded', function() {
+                document.body.insertAdjacentHTML('beforeend', `
+                <div id="access-modal" style="
+                    position: fixed;
+                    top: 0; left: 0;
+                    width: 100vw; height: 100vh;
+                    background: rgba(0,0,0,0.7);
+                    z-index: 99999;
+                    display: flex;
+                    justify-content: center;
+                    align-items: center;
+                ">
+                    <div style="
+                        background: white;
+                        color: #1F2937;
+                        max-width: 400px;
+                        width: 90vw;
+                        border-radius: 16px;
+                        padding: 2rem 1.5rem;
+                        box-shadow: 0 8px 32px rgba(0,0,0,0.25);
+                        text-align: center;
+                        font-family: 'Poppins', sans-serif;
+                    ">
+                        <h2 style="color: var(--primary-color); margin-bottom: 1rem;">Pro Feature</h2>
+                        <p style="font-size: 1.1rem; margin-bottom: 2rem;">This feature is only available with a full account. Please log in or upgrade to access the Trajectory Panel.</p>
+                        <button id="modal-redirect-btn" style="
+                            background: var(--gradient);
+                            color: white;
+                            border: none;
+                            padding: 0.9rem 2rem;
+                            border-radius: 8px;
+                            font-size: 1rem;
+                            font-weight: 500;
+                            cursor: pointer;
+                            transition: background 0.2s;
+                        ">Go to Login / Upgrade</button>
+                    </div>
+                </div>
+                `);
+                document.getElementById('modal-redirect-btn').onclick = function() {
+                    window.location.replace('irscore.html');
+                };
+            });
         }
     </script>
     <link rel="stylesheet" href="styles.css">
