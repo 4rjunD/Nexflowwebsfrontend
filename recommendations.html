@@ -357,69 +357,15 @@
     </div>
 
     <script>
-        async function checkSessionAndPlan() {
-            try {
-                const res = await fetch(`${API_BASE_URL}/api/session`, { credentials: 'include' });
-                if (!res.ok) throw new Error('Not authenticated');
-                const data = await res.json();
-                if (!data.authenticated) {
-                    window.location.href = 'index.html';
-                    return;
-                }
-                if (data.plan !== 'pro') {
-                    // Show modal popup instead of alert
-                    document.body.insertAdjacentHTML('beforeend', `
-                        <div id="access-modal" style="
-                            position: fixed;
-                            top: 0; left: 0;
-                            width: 100vw; height: 100vh;
-                            background: rgba(0,0,0,0.7);
-                            z-index: 99999;
-                            display: flex;
-                            justify-content: center;
-                            align-items: center;
-                        ">
-                            <div style="
-                                background: white;
-                                color: #1F2937;
-                                max-width: 400px;
-                                width: 90vw;
-                                border-radius: 16px;
-                                padding: 2rem 1.5rem;
-                                box-shadow: 0 8px 32px rgba(0,0,0,0.25);
-                                text-align: center;
-                                font-family: 'Poppins', sans-serif;
-                            ">
-                                <h2 style="color: var(--primary-color); margin-bottom: 1rem;">Pro Feature</h2>
-                                <p style="font-size: 1.1rem; margin-bottom: 2rem;">This feature is only available with a full account. Please upgrade to access the Recommendations.</p>
-                                <button id="modal-redirect-btn" style="
-                                    background: var(--gradient);
-                                    color: white;
-                                    border: none;
-                                    padding: 0.9rem 2rem;
-                                    border-radius: 8px;
-                                    font-size: 1rem;
-                                    font-weight: 500;
-                                    cursor: pointer;
-                                    transition: background 0.2s;
-                                ">Upgrade</button>
-                            </div>
-                        </div>
-                    `);
-                    document.getElementById('modal-redirect-btn').onclick = function() {
-                        window.location.replace('pricing.html');
-                    };
-                    return;
-                }
-            } catch {
-                window.location.href = 'index.html';
-            }
+        // Helper to get CSRF token from cookie
+        function getCSRFToken() {
+            const match = document.cookie.match(/(?:^|; )csrf_token=([^;]*)/);
+            return match ? decodeURIComponent(match[1]) : '';
         }
-        checkSessionAndPlan();
 
         async function handleLogout() {
             try {
-                await fetch(`${API_BASE_URL}/api/logout`, { method: 'POST', credentials: 'include' });
+                await fetch(`${API_BASE_URL}/api/logout`, { method: 'POST', credentials: 'include', headers: { 'X-CSRF-Token': getCSRFToken() } });
             } catch (error) {
                 console.error('Logout error:', error);
             } finally {
@@ -428,22 +374,24 @@
             }
         }
 
+        let userData = null;
+        async function fetchIRScoreData() {
+            try {
+                const res = await fetch(`${API_BASE_URL}/api/irscore`, { credentials: 'include' });
+                if (!res.ok) throw new Error('No IRScore data');
+                userData = await res.json();
+            } catch {
+                userData = null;
+            }
+            checkUserData();
+            if (userData && userData.score !== undefined) {
+                renderRecommendations();
+            }
+        }
         // Show/hide content based on data availability
         function checkUserData() {
             const mainContent = document.getElementById('main-content');
             const noDataMessage = document.getElementById('no-data-message');
-            
-            // Check if user has IRScore data from sessionStorage
-            let userData = null;
-            try {
-                const storedData = sessionStorage.getItem('irscoreData');
-                if (storedData) {
-                    userData = JSON.parse(storedData);
-                }
-            } catch (error) {
-                console.error('Error parsing user data:', error);
-            }
-            
             if (userData && userData.score !== undefined) {
                 mainContent.style.display = 'block';
                 noDataMessage.style.display = 'none';
@@ -452,9 +400,8 @@
                 noDataMessage.style.display = 'block';
             }
         }
-
-        // Run check on page load
-        checkUserData();
+        // Fetch IRScore data on page load
+        window.addEventListener('DOMContentLoaded', fetchIRScoreData);
 
         const recommendations = [
             {

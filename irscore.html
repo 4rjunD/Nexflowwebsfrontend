@@ -498,6 +498,48 @@
             }
         }
 
+        async function fetchAndDisplayIRScore() {
+            try {
+                const res = await fetch(`${API_BASE_URL}/api/irscore`, { credentials: 'include' });
+                if (!res.ok) throw new Error('No IRScore data');
+                const data = await res.json();
+                if (data && data.score !== undefined) {
+                    document.getElementById('score-display').textContent = Math.round(data.score);
+                    const scoreLabel = document.getElementById('score-label');
+                    const scoreDescription = document.getElementById('score-description');
+                    // ... (rest of your score label logic, same as in calculateIRScore)
+                    if (data.score >= 81.8) {
+                        scoreLabel.textContent = 'Excellent Metabolic Health - optimal insulin sensitivity and low risk';
+                        scoreLabel.style.color = '#4ADE80';
+                        scoreDescription.innerHTML = `<p>Great news! Your metabolic health is in excellent shape.</p>\n<ul><li>Your body is very efficient at using insulin</li><li>Your blood sugar levels are well-regulated</li><li>Your metabolism is working optimally</li></ul>`;
+                    } else if (data.score >= 71.1) {
+                        scoreLabel.textContent = 'Good Metabolic Health - normal insulin sensitivity';
+                        scoreLabel.style.color = '#FCD34D';
+                        scoreDescription.innerHTML = `<p>Your metabolic health is in good shape, but there's room for improvement.</p>\n<ul><li>Your body handles insulin well</li><li>Your blood sugar levels are generally stable</li><li>Small lifestyle changes could make a big difference</li></ul>`;
+                    } else if (data.score >= 35.4) {
+                        scoreLabel.textContent = 'Moderate Metabolic Health - intermediate risk of insulin resistance';
+                        scoreLabel.style.color = '#FB923C';
+                        scoreDescription.innerHTML = `<p>Your metabolic health needs some attention.</p>\n<ul><li>Your body could be more efficient with insulin</li><li>Your blood sugar levels might fluctuate</li><li>Lifestyle changes could help</li></ul>`;
+                    } else {
+                        scoreLabel.textContent = 'Needs Attention - high risk of insulin resistance';
+                        scoreLabel.style.color = '#F87171';
+                        scoreDescription.innerHTML = `<p>Your metabolic health needs attention. But don't worry—changes can help!</p>\n<ul><li>Your body may struggle with insulin efficiency</li><li>Your blood sugar levels might be unstable</li><li>Try consulting your doctor and improving lifestyle</li></ul>`;
+                    }
+                    document.getElementById('score-section').style.display = 'block';
+                }
+            } catch {
+                // No IRScore data, keep score section hidden
+            }
+        }
+        // Fetch IRScore data on page load
+        window.addEventListener('DOMContentLoaded', fetchAndDisplayIRScore);
+
+        // Helper to get CSRF token from cookie
+        function getCSRFToken() {
+            const match = document.cookie.match(/(?:^|; )csrf_token=([^;]*)/);
+            return match ? decodeURIComponent(match[1]) : '';
+        }
+
         async function calculateIRScore(event) {
             event.preventDefault();
 
@@ -583,9 +625,13 @@
                 document.getElementById('score-section').style.display = 'block';
                 document.getElementById('score-section').scrollIntoView({ behavior: 'smooth' });
 
-                // Store score data securely (you may want to send this to backend)
-                // For now, we'll use sessionStorage which is slightly more secure than localStorage
-                sessionStorage.setItem('irscoreData', JSON.stringify({ age, gender, weight, height, bmi, sleep, family_history, activity, score }));
+                // Store score data securely (send to backend)
+                await fetch(`${API_BASE_URL}/api/irscore`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json', 'X-CSRF-Token': getCSRFToken() },
+                    credentials: 'include',
+                    body: JSON.stringify({ age, gender, weight, height, bmi, sleep, family_history, activity, score })
+                });
             } catch (error) {
                 console.error('Error calculating IRScore:', error);
                 alert(`There was an error calculating your IRScore: ${error.message}. Please try again later.`);
@@ -601,7 +647,8 @@
                 // Call backend logout endpoint to clear session
                 await fetch(`${API_BASE_URL}/api/logout`, { 
                     method: 'POST', 
-                    credentials: 'include' 
+                    credentials: 'include',
+                    headers: { 'X-CSRF-Token': getCSRFToken() }
                 });
             } catch (error) {
                 console.error('Logout error:', error);
@@ -615,15 +662,15 @@
 
         // TOS modal logic - use sessionStorage instead of localStorage
         function acceptTOS() {
-            sessionStorage.setItem('agreedToTOS', 'true');
+            // sessionStorage.setItem('agreedToTOS', 'true');
             document.getElementById('tos-modal').style.display = 'none';
         }
 
         window.addEventListener('load', () => {
-            const agreed = sessionStorage.getItem('agreedToTOS');
-            if (agreed !== 'true') {
-                document.getElementById('tos-modal').style.display = 'flex';
-            }
+            // const agreed = sessionStorage.getItem('agreedToTOS');
+            // if (agreed !== 'true') {
+            document.getElementById('tos-modal').style.display = 'flex';
+            // }
         });
     </script>
 </body>

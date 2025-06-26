@@ -198,7 +198,7 @@
         <input type="password" autocomplete="off" id="confirm-password" name="confirm-password" required placeholder="Confirm your password" />
         <div class="error-message" id="confirm-password-error"></div>
       </div>
-      <div class="payment-section">
+      <!-- <div class="payment-section">
         <h3>Payment Information</h3>
         <div class="form-group">
           <label for="card-number">Card Number</label>
@@ -214,7 +214,7 @@
             <input type="text" id="cvv" name="cvv" required placeholder="123" />
           </div>
         </div>
-      </div>
+      </div> -->
       <div class="terms">
         <input type="checkbox" id="terms" required />
         <label for="terms">I agree to the <a style="color: var(--primary-color); text-decoration: none; cursor:pointer;" onclick="showTOSModal(event)">Terms of Service</a> and <a style="color: var(--primary-color); text-decoration: none; cursor:pointer;" onclick="showTOSModal(event)">Privacy Policy</a></label>
@@ -281,6 +281,12 @@
   <script>
     const API_BASE_URL = "https://nexflowwebs.onrender.com";
 
+    // Helper to get CSRF token from cookie
+    function getCSRFToken() {
+      const match = document.cookie.match(/(?:^|; )csrf_token=([^;]*)/);
+      return match ? decodeURIComponent(match[1]) : '';
+    }
+
     async function handleSignup(event) {
       event.preventDefault();
 
@@ -313,7 +319,7 @@
       try {
         const response = await fetch(`${API_BASE_URL}/api/signup`, {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
+          headers: { 'Content-Type': 'application/json', 'X-CSRF-Token': getCSRFToken() },
           credentials: 'include',
           body: JSON.stringify({ name, email, password, plan })
         });

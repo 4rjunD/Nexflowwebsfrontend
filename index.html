@@ -282,6 +282,12 @@
             document.getElementById('signup-container').style.display = 'none';
         }
 
+        // Helper to get CSRF token from cookie
+        function getCSRFToken() {
+            const match = document.cookie.match(/(?:^|; )csrf_token=([^;]*)/);
+            return match ? decodeURIComponent(match[1]) : '';
+        }
+
         async function handleLogin(event) {
             event.preventDefault();
             const email = document.getElementById('email').value;
@@ -292,7 +298,8 @@
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
-                        'Accept': 'application/json'
+                        'Accept': 'application/json',
+                        'X-CSRF-Token': getCSRFToken()
                     },
                     mode: 'cors',
                     credentials: 'include',
@@ -329,7 +336,8 @@
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
-                        'Accept': 'application/json'
+                        'Accept': 'application/json',
+                        'X-CSRF-Token': getCSRFToken()
                     },
                     mode: 'cors',
                     credentials: 'include',
@@ -350,42 +358,27 @@
         }
 
         async function handleLogout() {
-            // Call backend to clear session cookie
-            await fetch(`${API_BASE_URL}/api/logout`, { method: 'POST', credentials: 'include' });
+            await fetch(`${API_BASE_URL}/api/logout`, { method: 'POST', credentials: 'include', headers: { 'X-CSRF-Token': getCSRFToken() } });
             window.location.href = 'index.html';
         }
 
         function handleDemoLogin() {
-            // Check if demo has been used before
-            if (sessionStorage.getItem('demoUsed') === 'true') {
-                alert('Demo version has already been used. Please log in with your credentials to continue.');
-                return;
-            }
-
-            // Store demo login state (limited access) and mark as used
-            sessionStorage.setItem('isLoggedIn', 'true');
-            sessionStorage.setItem('hasFullAccess', 'false');
-            sessionStorage.setItem('demoUsed', 'true');
-            
-            // Set demo user
-            sessionStorage.setItem('currentUser', JSON.stringify({
-                name: 'Demo User',
-                email: 'demo@example.com',
-                hasFullAccess: false
-            }));
-            
-            // Redirect to calculator
-            window.location.href = 'irscore.html';
-        }
-
-        // Check if demo has been used and show appropriate message
-        if (sessionStorage.getItem('demoUsed') === 'true') {
-            const demoButton = document.querySelector('.demo-button');
-            const demoText = document.querySelector('.demo-login p');
-            demoButton.disabled = true;
-            demoButton.style.opacity = '0.5';
-            demoButton.style.cursor = 'not-allowed';
-            demoText.textContent = 'Demo version has been used. Please log in to continue.';
+            fetch(`${API_BASE_URL}/api/use-demo`, {
+                method: 'POST',
+                credentials: 'include',
+                headers: { 'X-CSRF-Token': getCSRFToken() }
+            })
+            .then(res => res.json())
+            .then(data => {
+                if (data.message && data.message.includes('Demo already used')) {
+                    alert('Demo version has already been used. Please log in with your credentials to continue.');
+                } else {
+                    window.location.href = 'irscore.html';
+                }
+            })
+            .catch(() => {
+                alert('Error starting demo. Please try again.');
+            });
         }
     </script>
 </body>
