@@ -308,12 +308,12 @@
             </div>
             <div class="form-group">
                 <label for="password">Password</label>
-                <input type="password" id="password" name="password" required placeholder="Create a password">
+                <input type="password" autocomplete="off" id="password" name="password" required placeholder="Create a password">
                 <div class="error-message" id="password-error"></div>
             </div>
             <div class="form-group">
                 <label for="confirm-password">Confirm Password</label>
-                <input type="password" id="confirm-password" name="confirm-password" required placeholder="Confirm your password">
+                <input type="password" autocomplete="off" id="confirm-password" name="confirm-password" required placeholder="Confirm your password">
                 <div class="error-message" id="confirm-password-error"></div>
             </div>
             <div class="terms">
@@ -400,62 +400,41 @@
     </div>
 
     <script>
-        // API URL configuration
         const API_BASE_URL = "https://nexflowwebs.onrender.com";
-
-
-
         async function handleSignup(event) {
             event.preventDefault();
-            
             const name = document.getElementById('name').value;
             const email = document.getElementById('email').value;
             const password = document.getElementById('password').value;
             const confirmPassword = document.getElementById('confirm-password').value;
             const errorElement = document.getElementById('email-error');
-            
+            const plan = "free";
             if (password !== confirmPassword) {
                 document.getElementById('confirm-password-error').textContent = 'Passwords do not match';
                 document.getElementById('confirm-password-error').style.display = 'block';
                 return;
             }
-
             try {
-                console.log('Attempting to sign up with:', { name, email });
-                
                 const response = await fetch(`${API_BASE_URL}/api/signup`, {
                     method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        //'Accept': 'application/json'
-                    },
-                    credentials: 'include', // only keep if using cookies/session
-                    body: JSON.stringify({ name, email, password })
+                    headers: { 'Content-Type': 'application/json' },
+                    credentials: 'include',
+                    body: JSON.stringify({ name, email, password, plan })
                 });
-
-                console.log('Response status:', response.status);
-                
                 let data;
                 try {
                     const text = await response.text();
                     data = text ? JSON.parse(text) : {};
-                } catch {
-                    data = {};
-                }
-                console.log('Response data:', data);
-
+                } catch { data = {}; }
                 if (response.ok) {
-                    localStorage.setItem('isLoggedIn', 'true');
-                    localStorage.setItem('userEmail', email);
+                    // Session cookie set by backend
                     window.location.href = 'irscore.html';
                 } else {
                     errorElement.textContent = data.message || 'Error creating account';
                     errorElement.style.display = 'block';
                 }
             } catch (error) {
-                console.error('Signup error:', error);
                 errorElement.textContent = `Error: ${error.message}. Please check your internet connection and try again.`;
-                console.error('Signup fetch failed:', error);
                 errorElement.style.display = 'block';
             }
         }

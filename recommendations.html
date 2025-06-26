@@ -14,16 +14,26 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>NexFlow - Personalized Recommendations</title>
     <script>
-        // Immediate check before anything else loads
-        if (!localStorage.getItem('isLoggedIn')) {
-            window.location.replace('index.html');
+        const API_BASE_URL = "https://nexflowwebs.onrender.com";
+        async function checkSessionAndPlan() {
+            try {
+                const res = await fetch(`${API_BASE_URL}/api/session`, { credentials: 'include' });
+                if (!res.ok) throw new Error('Not authenticated');
+                const data = await res.json();
+                if (!data.authenticated) {
+                    window.location.href = 'index.html';
+                    return;
+                }
+                if (data.plan !== 'pro') {
+                    alert('This feature is only available with a full account. Please log in or upgrade to access the Recommendations.');
+                    window.location.href = 'irscore.html';
+                    return;
+                }
+            } catch {
+                window.location.href = 'index.html';
+            }
         }
-        
-        // Check for full access
-        if (localStorage.getItem('hasFullAccess') !== 'true') {
-            alert('This feature is only available with a full account. Please log in to access the Recommendations.');
-            window.location.replace('irscore.html');
-        }
+        checkSessionAndPlan();
     </script>
     <link rel="stylesheet" href="styles.css">
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
@@ -307,6 +317,32 @@
     </div>
 
     <script>
+        async function checkSessionAndPlan() {
+            try {
+                const res = await fetch(`${API_BASE_URL}/api/session`, { credentials: 'include' });
+                if (!res.ok) throw new Error('Not authenticated');
+                const data = await res.json();
+                if (!data.authenticated) {
+                    window.location.href = 'index.html';
+                    return;
+                }
+                if (data.plan !== 'pro') {
+                    alert('This feature is only available with a full account. Please log in or upgrade to access the Recommendations.');
+                    window.location.href = 'irscore.html';
+                    return;
+                }
+            } catch {
+                window.location.href = 'index.html';
+            }
+        }
+        checkSessionAndPlan();
+
+        function handleLogout() {
+            fetch(`${API_BASE_URL}/api/logout`, { method: 'POST', credentials: 'include' }).then(() => {
+                window.location.href = 'index.html';
+            });
+        }
+
         // Check login and data status
         function checkAccess() {
             const isLoggedIn = localStorage.getItem('isLoggedIn') === 'true';
@@ -434,15 +470,6 @@
 
         // Initial render
         renderRecommendations();
-
-        function handleLogout() {
-            // Clear all login-related data
-            localStorage.removeItem('isLoggedIn');
-            localStorage.removeItem('hasFullAccess');
-            localStorage.removeItem('irscoreData');
-            // Redirect to login page
-            window.location.href = 'index.html';
-        }
     </script>
 </body>
 </html> 

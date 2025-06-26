@@ -190,12 +190,12 @@
       </div>
       <div class="form-group">
         <label for="password">Password</label>
-        <input type="password" id="password" name="password" required placeholder="Create a password" />
+        <input type="password" autocomplete="off"id="password" name="password" required placeholder="Create a password" />
         <div class="error-message" id="password-error"></div>
       </div>
       <div class="form-group">
         <label for="confirm-password">Confirm Password</label>
-        <input type="password" id="confirm-password" name="confirm-password" required placeholder="Confirm your password" />
+        <input type="password" autocomplete="off" id="confirm-password" name="confirm-password" required placeholder="Confirm your password" />
         <div class="error-message" id="confirm-password-error"></div>
       </div>
       <div class="payment-section">
@@ -288,6 +288,7 @@
       const email = document.getElementById('email').value;
       const password = document.getElementById('password').value;
       const confirmPassword = document.getElementById('confirm-password').value;
+      const plan = "pro";
 
       document.querySelectorAll('.error-message').forEach(el => el.style.display = 'none');
 
@@ -314,14 +315,12 @@
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           credentials: 'include',
-          body: JSON.stringify({ name, email, password })
+          body: JSON.stringify({ name, email, password, plan })
         });
 
         const data = await response.json();
 
         if (response.ok) {
-          localStorage.setItem('isLoggedIn', 'true');
-          localStorage.setItem('userEmail', email);
           window.location.href = 'irscore.html';
         } else {
           document.getElementById('email-error').textContent = data.message || 'Signup failed';

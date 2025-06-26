@@ -255,10 +255,22 @@
             ? 'http://localhost:5000'
             : 'https://nexflowwebs.onrender.com';
 
-        // Check if already logged in
-        if (localStorage.getItem('isLoggedIn') === 'true') {
-            window.location.href = 'irscore.html';
+        // Check session on page load
+        async function checkSessionAndRedirect() {
+            try {
+                const res = await fetch(`${API_BASE_URL}/api/session`, {
+                    credentials: 'include',
+                });
+                if (!res.ok) throw new Error('Not authenticated');
+                const data = await res.json();
+                if (data.authenticated) {
+                    window.location.href = 'irscore.html';
+                }
+            } catch {
+                // Not logged in, stay on login page
+            }
         }
+        checkSessionAndRedirect();
 
         function showSignupForm() {
             document.querySelector('.login-container').style.display = 'none';
@@ -272,14 +284,10 @@
 
         async function handleLogin(event) {
             event.preventDefault();
-            
             const email = document.getElementById('email').value;
             const password = document.getElementById('password').value;
             const errorElement = document.getElementById('email-error');
-            
             try {
-                console.log('Attempting to login with:', { email }); // Log attempt
-                
                 const response = await fetch(`${API_BASE_URL}/api/login`, {
                     method: 'POST',
                     headers: {
@@ -290,22 +298,15 @@
                     credentials: 'include',
                     body: JSON.stringify({ email, password })
                 });
-
-                console.log('Response status:', response.status); // Log response status
-                
                 const data = await response.json();
-                console.log('Response data:', data); // Log response data
-
                 if (response.ok) {
-                    localStorage.setItem('isLoggedIn', 'true');
-                    localStorage.setItem('userEmail', email);
+                    // Session cookie set by backend
                     window.location.href = 'irscore.html';
                 } else {
                     errorElement.textContent = data.message || 'Invalid email or password';
                     errorElement.style.display = 'block';
                 }
             } catch (error) {
-                console.error('Login error:', error); // Log detailed error
                 errorElement.textContent = `Error: ${error.message}. Please check your internet connection and try again.`;
                 errorElement.style.display = 'block';
             }
@@ -313,22 +314,17 @@
 
         async function handleSignup(event) {
             event.preventDefault();
-            
             const name = document.getElementById('signup-name').value;
             const email = document.getElementById('signup-email').value;
             const password = document.getElementById('signup-password').value;
             const confirmPassword = document.getElementById('signup-confirm-password').value;
             const errorElement = document.getElementById('signup-password-error');
-
             if (password !== confirmPassword) {
                 errorElement.textContent = 'Passwords do not match';
                 errorElement.style.display = 'block';
                 return;
             }
-
             try {
-                console.log('Attempting to sign up with:', { name, email }); // Log attempt
-                
                 const response = await fetch(`${API_BASE_URL}/api/signup`, {
                     method: 'POST',
                     headers: {
@@ -339,25 +335,24 @@
                     credentials: 'include',
                     body: JSON.stringify({ name, email, password })
                 });
-
-                console.log('Response status:', response.status); // Log response status
-                
                 const data = await response.json();
-                console.log('Response data:', data); // Log response data
-
                 if (response.ok) {
-                    localStorage.setItem('isLoggedIn', 'true');
-                    localStorage.setItem('userEmail', email);
+                    // Session cookie set by backend
                     window.location.href = 'irscore.html';
                 } else {
                     errorElement.textContent = data.message || 'Error creating account';
                     errorElement.style.display = 'block';
                 }
             } catch (error) {
-                console.error('Signup error:', error); // Log detailed error
                 errorElement.textContent = `Error: ${error.message}. Please check your internet connection and try again.`;
                 errorElement.style.display = 'block';
             }
+        }
+
+        async function handleLogout() {
+            // Call backend to clear session cookie
+            await fetch(`${API_BASE_URL}/api/logout`, { method: 'POST', credentials: 'include' });
+            window.location.href = 'index.html';
         }
 
         function handleDemoLogin() {
