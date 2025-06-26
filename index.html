@@ -254,7 +254,12 @@
         const API_BASE_URL = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1'
             ? 'http://localhost:5000'
             : 'https://nexflowwebs.onrender.com';
-
+        
+        async function initCSRF() {
+            const res = await fetch(`${API_BASE_URL}/api/csrf`, { credentials: 'include' });
+            const data = await res.json();
+            console.log("CSRF token initialized:", data.csrf_token);
+        }
         // Ensure CSRF cookie is set on page load
         fetch(`${API_BASE_URL}/api/session`, { credentials: 'include' });
 
@@ -293,6 +298,7 @@
 
         async function handleLogin(event) {
             event.preventDefault();
+            await initCSRF();
             const email = document.getElementById('email').value;
             const password = document.getElementById('password').value;
             const errorElement = document.getElementById('email-error');
@@ -324,6 +330,7 @@
 
         async function handleSignup(event) {
             event.preventDefault();
+            await initCSRF();
             const name = document.getElementById('signup-name').value;
             const email = document.getElementById('signup-email').value;
             const password = document.getElementById('signup-password').value;
