@@ -64,9 +64,14 @@
                             </div>
                         </div>
                     `);
-                    document.getElementById('modal-redirect-btn').onclick = function() {
-                        window.location.replace('pricing.html');
-                    };
+                    setTimeout(() => {
+                        const btn = document.getElementById('modal-redirect-btn');
+                        if (btn) {
+                            btn.onclick = function() {
+                                window.location.href = 'pricing.html';
+                            };
+                        }
+                    }, 0);
                     return;
                 }
             } catch {
@@ -406,9 +411,14 @@
                             </div>
                         </div>
                     `);
-                    document.getElementById('modal-redirect-btn').onclick = function() {
-                        window.location.replace('pricing.html');
-                    };
+                    setTimeout(() => {
+                        const btn = document.getElementById('modal-redirect-btn');
+                        if (btn) {
+                            btn.onclick = function() {
+                                window.location.href = 'pricing.html';
+                            };
+                        }
+                    }, 0);
                     return;
                 }
             } catch {
