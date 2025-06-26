@@ -413,15 +413,23 @@
     </div>
 
     <script>
-        // Get user data
-        const userData = JSON.parse(localStorage.getItem('irscoreData'));
+        // Get user data from sessionStorage instead of localStorage
+        let userData = null;
+        try {
+            const storedData = sessionStorage.getItem('irscoreData');
+            if (storedData) {
+                userData = JSON.parse(storedData);
+            }
+        } catch (error) {
+            console.error('Error parsing user data:', error);
+        }
         
         // Show/hide content based on data availability
         function checkUserData() {
             const mainContent = document.getElementById('main-content');
             const noDataMessage = document.getElementById('no-data-message');
             
-            if (userData) {
+            if (userData && userData.score !== undefined) {
                 mainContent.style.display = 'block';
                 noDataMessage.style.display = 'none';
             } else {
@@ -433,147 +441,152 @@
         // Run check on page load
         checkUserData();
         
-        // Initialize chart with user's current score
-        const ctx = document.getElementById('trajectoryChart').getContext('2d');
-        const chart = new Chart(ctx, {
-            type: 'line',
-            data: {
-                labels: ['Week 1', 'Week 2', 'Week 3', 'Week 4', 'Week 5', 'Week 6'],
-                datasets: [{
-                    label: 'IRScore Trajectory',
-                    data: [userData.score],
-                    borderColor: '#8B5CF6',
-                    backgroundColor: 'rgba(139, 92, 246, 0.1)',
-                    tension: 0.4,
-                    fill: true
-                }]
-            },
-            options: {
-                responsive: true,
-                plugins: {
-                    legend: {
-                        display: false
-                    },
-                    tooltip: {
-                        mode: 'index',
-                        intersect: false,
-                    }
+        // Initialize chart with user's current score (only if userData exists)
+        if (userData && userData.score !== undefined) {
+            const ctx = document.getElementById('trajectoryChart').getContext('2d');
+            const chart = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: ['Week 1', 'Week 2', 'Week 3', 'Week 4', 'Week 5', 'Week 6'],
+                    datasets: [{
+                        label: 'IRScore Trajectory',
+                        data: [userData.score],
+                        borderColor: '#8B5CF6',
+                        backgroundColor: 'rgba(139, 92, 246, 0.1)',
+                        tension: 0.4,
+                        fill: true
+                    }]
                 },
-                scales: {
-                    y: {
-                        beginAtZero: false,
-                        min: Math.max(0, userData.score - 20),
-                        max: Math.min(100, userData.score + 20)
+                options: {
+                    responsive: true,
+                    plugins: {
+                        legend: {
+                            display: false
+                        },
+                        tooltip: {
+                            mode: 'index',
+                            intersect: false,
+                        }
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: false,
+                            min: Math.max(0, userData.score - 20),
+                            max: Math.min(100, userData.score + 20)
+                        }
                     }
                 }
-            }
-        });
+            });
 
-        // Update trajectory based on user's current data
-        function updateTrajectory() {
-            const carbs = parseFloat(document.getElementById('carbs').value);
-            const protein = parseFloat(document.getElementById('protein').value);
-            const fiber = parseFloat(document.getElementById('fiber').value);
-            const cardio = parseFloat(document.getElementById('cardio').value);
-            const strength = parseFloat(document.getElementById('strength').value);
-            const sleep = parseFloat(document.getElementById('sleep').value);
-            const stress = parseFloat(document.getElementById('stress').value);
+            // Update trajectory based on user's current data
+            function updateTrajectory() {
+                const carbs = parseFloat(document.getElementById('carbs').value);
+                const protein = parseFloat(document.getElementById('protein').value);
+                const fiber = parseFloat(document.getElementById('fiber').value);
+                const cardio = parseFloat(document.getElementById('cardio').value);
+                const strength = parseFloat(document.getElementById('strength').value);
+                const sleep = parseFloat(document.getElementById('sleep').value);
+                const stress = parseFloat(document.getElementById('stress').value);
 
-            // Calculate impact based on user's current score and inputs
-            const baseScore = userData.score;
-            const weeks = 6;
-            const trajectory = [baseScore];
+                // Calculate impact based on user's current score and inputs
+                const baseScore = userData.score;
+                const weeks = 6;
+                const trajectory = [baseScore];
 
-            for (let i = 1; i < weeks; i++) {
-                let weekScore = baseScore;
-                
-                // Diet impact (weighted based on user's current diet)
-                const dietImpact = (
-                    (carbs / 300) * 2 +  // Normalize to 300g carbs
-                    (protein / 150) * 2 + // Normalize to 150g protein
-                    (fiber / 30) * 2      // Normalize to 30g fiber
-                ) * 5;
+                for (let i = 1; i < weeks; i++) {
+                    let weekScore = baseScore;
+                    
+                    // Diet impact (weighted based on user's current diet)
+                    const dietImpact = (
+                        (carbs / 300) * 2 +  // Normalize to 300g carbs
+                        (protein / 150) * 2 + // Normalize to 150g protein
+                        (fiber / 30) * 2      // Normalize to 30g fiber
+                    ) * 5;
 
-                // Exercise impact (weighted based on user's current activity level)
-                const exerciseImpact = (
-                    (cardio / 150) * 2 +    // Normalize to 150 minutes cardio
-                    (strength / 120) * 2     // Normalize to 120 minutes strength
-                ) * 5;
+                    // Exercise impact (weighted based on user's current activity level)
+                    const exerciseImpact = (
+                        (cardio / 150) * 2 +    // Normalize to 150 minutes cardio
+                        (strength / 120) * 2     // Normalize to 120 minutes strength
+                    ) * 5;
 
-                // Lifestyle impact
-                const lifestyleImpact = (
-                    (sleep / 8) * 2 +        // Normalize to 8 hours sleep
-                    ((10 - stress) / 10) * 2  // Invert stress scale
-                ) * 5;
+                    // Lifestyle impact
+                    const lifestyleImpact = (
+                        (sleep / 8) * 2 +        // Normalize to 8 hours sleep
+                        ((10 - stress) / 10) * 2  // Invert stress scale
+                    ) * 5;
 
-                // Calculate weekly improvement
-                const weeklyImprovement = (dietImpact + exerciseImpact + lifestyleImpact) * (i / weeks);
-                weekScore += weeklyImprovement;
+                    // Calculate weekly improvement
+                    const weeklyImprovement = (dietImpact + exerciseImpact + lifestyleImpact) * (i / weeks);
+                    weekScore += weeklyImprovement;
 
-                // Ensure score stays within bounds
-                weekScore = Math.max(0, Math.min(100, weekScore));
-                trajectory.push(weekScore);
-            }
-
-            // Update chart
-            chart.data.datasets[0].data = trajectory;
-            chart.update();
-        }
-
-        // Add event listeners to all sliders
-        document.querySelectorAll('input[type="range"]').forEach(slider => {
-            slider.addEventListener('input', function() {
-                const valueDisplay = this.nextElementSibling;
-                if (this.id === 'sleep') {
-                    valueDisplay.textContent = `${this.value} hrs`;
-                } else if (this.id === 'strength') {
-                    valueDisplay.textContent = `${this.value}x/week`;
-                } else if (this.id === 'cardio') {
-                    valueDisplay.textContent = `${this.value} min`;
-                } else {
-                    valueDisplay.textContent = `${this.value}%`;
+                    // Ensure score stays within bounds
+                    weekScore = Math.max(0, Math.min(100, weekScore));
+                    trajectory.push(weekScore);
                 }
-                updateTrajectory();
+
+                // Update chart
+                chart.data.datasets[0].data = trajectory;
+                chart.update();
+            }
+
+            // Add event listeners to all sliders
+            document.querySelectorAll('input[type="range"]').forEach(slider => {
+                slider.addEventListener('input', function() {
+                    const valueDisplay = this.nextElementSibling;
+                    if (this.id === 'sleep') {
+                        valueDisplay.textContent = `${this.value} hrs`;
+                    } else if (this.id === 'strength') {
+                        valueDisplay.textContent = `${this.value}x/week`;
+                    } else if (this.id === 'cardio') {
+                        valueDisplay.textContent = `${this.value} min`;
+                    } else {
+                        valueDisplay.textContent = `${this.value}%`;
+                    }
+                    updateTrajectory();
+                });
             });
-        });
 
-        // Initialize slider values
-        function initializeSliders() {
-            const carbsSlider = document.getElementById('carbs');
-            const proteinSlider = document.getElementById('protein');
-            const fiberSlider = document.getElementById('fiber');
-            const cardioSlider = document.getElementById('cardio');
-            const strengthSlider = document.getElementById('strength');
-            const sleepSlider = document.getElementById('sleep');
-            const stressSlider = document.getElementById('stress');
+            // Initialize slider values
+            function initializeSliders() {
+                const carbsSlider = document.getElementById('carbs');
+                const proteinSlider = document.getElementById('protein');
+                const fiberSlider = document.getElementById('fiber');
+                const cardioSlider = document.getElementById('cardio');
+                const strengthSlider = document.getElementById('strength');
+                const sleepSlider = document.getElementById('sleep');
+                const stressSlider = document.getElementById('stress');
 
-            // Set initial values
-            carbsSlider.value = 50;
-            proteinSlider.value = 50;
-            fiberSlider.value = 50;
-            cardioSlider.value = 150;
-            strengthSlider.value = 2;
-            sleepSlider.value = 7;
-            stressSlider.value = 50;
+                // Set initial values
+                carbsSlider.value = 50;
+                proteinSlider.value = 50;
+                fiberSlider.value = 50;
+                cardioSlider.value = 150;
+                strengthSlider.value = 2;
+                sleepSlider.value = 7;
+                stressSlider.value = 50;
 
-            // Trigger input events to update displays
-            [carbsSlider, proteinSlider, fiberSlider, cardioSlider, strengthSlider, sleepSlider, stressSlider].forEach(slider => {
-                slider.dispatchEvent(new Event('input'));
-            });
-        }
+                // Trigger input events to update displays
+                [carbsSlider, proteinSlider, fiberSlider, cardioSlider, strengthSlider, sleepSlider, stressSlider].forEach(slider => {
+                    slider.dispatchEvent(new Event('input'));
+                });
+            }
 
-        // Run initialization after checking user data
-        if (userData) {
+            // Run initialization after checking user data
             initializeSliders();
+
+            // Initial update
+            updateTrajectory();
         }
 
-        // Initial update
-        updateTrajectory();
-
-        function handleLogout() {
-            fetch(`${API_BASE_URL}/api/logout`, { method: 'POST', credentials: 'include' }).then(() => {
+        async function handleLogout() {
+            try {
+                await fetch(`${API_BASE_URL}/api/logout`, { method: 'POST', credentials: 'include' });
+            } catch (error) {
+                console.error('Logout error:', error);
+            } finally {
+                sessionStorage.clear();
                 window.location.href = 'index.html';
-            });
+            }
         }
     </script>
 </body>

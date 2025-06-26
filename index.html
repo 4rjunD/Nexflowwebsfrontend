@@ -357,18 +357,18 @@
 
         function handleDemoLogin() {
             // Check if demo has been used before
-            if (localStorage.getItem('demoUsed') === 'true') {
+            if (sessionStorage.getItem('demoUsed') === 'true') {
                 alert('Demo version has already been used. Please log in with your credentials to continue.');
                 return;
             }
 
             // Store demo login state (limited access) and mark as used
-            localStorage.setItem('isLoggedIn', 'true');
-            localStorage.setItem('hasFullAccess', 'false');
-            localStorage.setItem('demoUsed', 'true');
+            sessionStorage.setItem('isLoggedIn', 'true');
+            sessionStorage.setItem('hasFullAccess', 'false');
+            sessionStorage.setItem('demoUsed', 'true');
             
             // Set demo user
-            localStorage.setItem('currentUser', JSON.stringify({
+            sessionStorage.setItem('currentUser', JSON.stringify({
                 name: 'Demo User',
                 email: 'demo@example.com',
                 hasFullAccess: false
@@ -379,7 +379,7 @@
         }
 
         // Check if demo has been used and show appropriate message
-        if (localStorage.getItem('demoUsed') === 'true') {
+        if (sessionStorage.getItem('demoUsed') === 'true') {
             const demoButton = document.querySelector('.demo-button');
             const demoText = document.querySelector('.demo-login p');
             demoButton.disabled = true;

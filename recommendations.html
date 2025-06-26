@@ -337,38 +337,34 @@
         }
         checkSessionAndPlan();
 
-        function handleLogout() {
-            fetch(`${API_BASE_URL}/api/logout`, { method: 'POST', credentials: 'include' }).then(() => {
+        async function handleLogout() {
+            try {
+                await fetch(`${API_BASE_URL}/api/logout`, { method: 'POST', credentials: 'include' });
+            } catch (error) {
+                console.error('Logout error:', error);
+            } finally {
+                sessionStorage.clear();
                 window.location.href = 'index.html';
-            });
-        }
-
-        // Check login and data status
-        function checkAccess() {
-            const isLoggedIn = localStorage.getItem('isLoggedIn') === 'true';
-            const userData = localStorage.getItem('irscoreData');
-            
-            if (!isLoggedIn) {
-                window.location.href = '../index.html';
-                return false;
             }
-            
-            if (!userData) {
-                alert('Please complete the IRScore Calculator first to access the Recommendations.');
-                window.location.href = 'irscore.html';
-                return false;
-            }
-            
-            return true;
         }
 
         // Show/hide content based on data availability
         function checkUserData() {
             const mainContent = document.getElementById('main-content');
             const noDataMessage = document.getElementById('no-data-message');
-            const userData = JSON.parse(localStorage.getItem('irscoreData'));
             
-            if (userData) {
+            // Check if user has IRScore data from sessionStorage
+            let userData = null;
+            try {
+                const storedData = sessionStorage.getItem('irscoreData');
+                if (storedData) {
+                    userData = JSON.parse(storedData);
+                }
+            } catch (error) {
+                console.error('Error parsing user data:', error);
+            }
+            
+            if (userData && userData.score !== undefined) {
                 mainContent.style.display = 'block';
                 noDataMessage.style.display = 'none';
             } else {

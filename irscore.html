@@ -15,9 +15,23 @@
     <title>NexFlow - Insulin Resistance Calculator</title>
     <script>
         // Immediate check before anything else loads
-        if (!localStorage.getItem('isLoggedIn')) {
-            window.location.replace('index.html');
+        // At the top of your <script> tag or in a new <script> tag
+        const API_BASE_URL = 'https://nexflowwebs.onrender.com';
+
+        async function checkSessionOrRedirect() {
+            try {
+                const res = await fetch(`${API_BASE_URL}/api/session`, { credentials: 'include' });
+                if (!res.ok) throw new Error('Not authenticated');
+                const data = await res.json();
+                if (!data.authenticated) {
+                    window.location.href = 'index.html';
+                }
+                // else: stay on this page
+            } catch {
+                window.location.href = 'index.html';
+            }
         }
+        checkSessionOrRedirect();
     </script>
     <link rel="stylesheet" href="styles.css">
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
@@ -459,28 +473,29 @@
 </div>
 
     <script>
-        // Check login status
-        function checkLogin() {
-            const isLoggedIn = localStorage.getItem('isLoggedIn') === 'true';
-            if (!isLoggedIn) {
+        // Check if user has completed IRScore calculation
+        async function checkData(url) {
+            try {
+                // Check if user is authenticated first
+                const sessionRes = await fetch(`${API_BASE_URL}/api/session`, { credentials: 'include' });
+                if (!sessionRes.ok) {
+                    window.location.href = 'index.html';
+                    return false;
+                }
+                const sessionData = await sessionRes.json();
+                if (!sessionData.authenticated) {
+                    window.location.href = 'index.html';
+                    return false;
+                }
+
+                // Check if user has IRScore data (you may want to store this in backend)
+                // For now, we'll allow access and let the user calculate their score
+                return true;
+            } catch (error) {
+                console.error('Error checking data:', error);
                 window.location.href = 'index.html';
                 return false;
             }
-            return true;
-        }
-
-        // Run check on page load
-        if (!checkLogin()) {
-            throw new Error('Not logged in');
-        }
-
-        function checkData(url) {
-            const userData = localStorage.getItem('irscoreData');
-            if (!userData) {
-                alert('Please complete the IRScore Calculator first to access this page.');
-                return false;
-            }
-            return true;
         }
 
         async function calculateIRScore(event) {
@@ -568,7 +583,9 @@
                 document.getElementById('score-section').style.display = 'block';
                 document.getElementById('score-section').scrollIntoView({ behavior: 'smooth' });
 
-                localStorage.setItem('irscoreData', JSON.stringify({ age, gender, weight, height, bmi, sleep, family_history, activity, score }));
+                // Store score data securely (you may want to send this to backend)
+                // For now, we'll use sessionStorage which is slightly more secure than localStorage
+                sessionStorage.setItem('irscoreData', JSON.stringify({ age, gender, weight, height, bmi, sleep, family_history, activity, score }));
             } catch (error) {
                 console.error('Error calculating IRScore:', error);
                 alert(`There was an error calculating your IRScore: ${error.message}. Please try again later.`);
@@ -579,22 +596,31 @@
             }
         }
 
-        function handleLogout() {
-            // Clear all login-related data
-            localStorage.removeItem('isLoggedIn');
-            localStorage.removeItem('hasFullAccess');
-            localStorage.removeItem('irscoreData');
-            // Redirect to login page
-            window.location.href = 'index.html';
+        async function handleLogout() {
+            try {
+                // Call backend logout endpoint to clear session
+                await fetch(`${API_BASE_URL}/api/logout`, { 
+                    method: 'POST', 
+                    credentials: 'include' 
+                });
+            } catch (error) {
+                console.error('Logout error:', error);
+            } finally {
+                // Clear any remaining client-side data
+                sessionStorage.clear();
+                // Redirect to login page
+                window.location.href = 'index.html';
+            }
         }
-        // TOS modal logic
+
+        // TOS modal logic - use sessionStorage instead of localStorage
         function acceptTOS() {
-            localStorage.setItem('agreedToTOS', 'true');
+            sessionStorage.setItem('agreedToTOS', 'true');
             document.getElementById('tos-modal').style.display = 'none';
         }
 
         window.addEventListener('load', () => {
-            const agreed = localStorage.getItem('agreedToTOS');
+            const agreed = sessionStorage.getItem('agreedToTOS');
             if (agreed !== 'true') {
                 document.getElementById('tos-modal').style.display = 'flex';
             }
