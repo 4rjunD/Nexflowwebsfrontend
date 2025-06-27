@@ -281,7 +281,7 @@
   <script>
     const API_BASE_URL = "https://nexflowwebs.onrender.com";
     // Ensure CSRF cookie is set on page load
-    fetch(`${API_BASE_URL}/api/session`, { credentials: 'include' });
+    // fetch(`${API_BASE_URL}/api/session`, { credentials: 'include' });
 
     // Helper to get CSRF token from cookie
     function getCSRFToken() {
@@ -294,6 +294,9 @@
       const match = document.cookie.match(/(?:^|; )csrf_token=([^;]*)/);
       return match ? decodeURIComponent(match[1]) : '';
     }
+      document.addEventListener('DOMContentLoaded', async () => {
+        await initCSRF(); // Ensure cookie is set before signup
+    });
 
 
 

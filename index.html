@@ -6,7 +6,11 @@
 <script>
     if (window.location.pathname === "/index.html") {
       window.location.replace("/");
-    }    
+    }
+    document.addEventListener('DOMContentLoaded', async () => {
+    await initCSRF();     // sets cookie
+    checkSessionAndRedirect();
+    });
     window.dataLayer = window.dataLayer || [];
     function gtag(){dataLayer.push(arguments);}
     gtag('js', new Date());
@@ -264,6 +268,7 @@
             }
 
 
+
         // Ensure CSRF cookie is set on page load
         fetch(`${API_BASE_URL}/api/session`, { credentials: 'include' });
 
@@ -288,7 +293,10 @@
             }
         }
 
-        checkSessionAndRedirect();
+        document.addEventListener('DOMContentLoaded', async () => {
+        await initCSRF();                      // sets CSRF cookie
+        checkSessionAndRedirect();            // only runs after CSRF is set
+        });
 
         function showSignupForm() {
             document.querySelector('.login-container').style.display = 'none';
@@ -309,21 +317,21 @@
         async function handleLogin(event) {
             event.preventDefault();
             try {
-                const token = await initCSRF();
                 const email = document.getElementById('email').value;
                 const password = document.getElementById('password').value;
                 const errorElement = document.getElementById('email-error');
+                const csrfToken = await initCSRF();
+
                 const response = await fetch(`${API_BASE_URL}/api/login`, {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
-                        'Accept': 'application/json',
-                        'X-CSRF-Token': token
+                        'X-CSRF-Token': csrfToken
                     },
-                    mode: 'cors',
                     credentials: 'include',
                     body: JSON.stringify({ email, password })
                 });
+
                 const data = await response.json();
                 if (response.ok) {
                     // Session cookie set by backend
@@ -342,7 +350,6 @@
         async function handleSignup(event) {
             event.preventDefault();
             try {
-                const token = await initCSRF();
                 const name = document.getElementById('signup-name').value;
                 const email = document.getElementById('signup-email').value;
                 const password = document.getElementById('signup-password').value;
@@ -353,17 +360,18 @@
                     errorElement.style.display = 'block';
                     return;
                 }
+                const csrfToken = await initCSRF();
+
                 const response = await fetch(`${API_BASE_URL}/api/signup`, {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
-                        'Accept': 'application/json',
-                        'X-CSRF-Token': token
+                        'X-CSRF-Token': csrfToken
                     },
-                    mode: 'cors',
                     credentials: 'include',
-                    body: JSON.stringify({ name, email, password })
+                    body: JSON.stringify({ email, password })
                 });
+
                 const data = await response.json();
                 if (response.ok) {
                     // Session cookie set by backend
