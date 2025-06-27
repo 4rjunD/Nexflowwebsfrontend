@@ -590,7 +590,7 @@
                     credentials: 'include',
                     headers: {
                         'Content-Type': 'application/json',
-                        'X-CSRF-Token': getCSRFToken()
+                        'X-CSRF-Token': token
                     },
                     body: JSON.stringify(payload)
                 });
@@ -647,7 +647,7 @@
                 // Store score data securely (send to backend)
                 await fetch(`${API_BASE_URL}/api/irscore`, {
                     method: 'POST',
-                    headers: { 'Content-Type': 'application/json', 'X-CSRF-Token': getCSRFToken() },
+                    headers: { 'Content-Type': 'application/json', 'X-CSRF-Token': token },
                     credentials: 'include',
                     body: JSON.stringify({ age, gender, weight, height, bmi, sleep, family_history, activity, score })
                 });
@@ -663,346 +663,20 @@
 
         async function handleLogout() {
             try {
-                await initCSRF();  // ensure CSRF is present
+                const token = await initCSRF();  // ensure CSRF is present
                 await fetch(`${API_BASE_URL}/api/logout`, { 
                     method: 'POST', 
                     credentials: 'include',
-                    headers: { 'X-CSRF-Token': getCSRFToken() }
+                    headers: { 'X-CSRF-Token': token }
                 });
             } catch (error) {
                 console.error('Logout error:', error);
             } finally {
-                // Clear session and redirect, but don't reload immediately
                 sessionStorage.clear();
-                // Use `location.replace` to avoid history caching
+                sessionStorage.setItem('justLoggedOut', 'true');  // new flag
                 window.location.replace('index.html');
             }
         }
-
-        async function handleLogout() {
-    try {
-        await initCSRF();  // ensure CSRF is present
-        await fetch(`${API_BASE_URL}/api/logout`, { 
-            method: 'POST', 
-            credentials: 'include',
-            headers: { 'X-CSRF-Token': getCSRFToken() }
-        });
-    } catch (error) {
-        console.error('Logout error:', error);
-    } finally {
-        // Clear session and redirect, but don't reload immediately
-        sessionStorage.clear();
-        // Use `location.replace` to avoid history caching
-        window.location.replace('index.html');
-    }
-}
-
-        async function handleLogout() {
-    try {
-        await initCSRF();  // ensure CSRF is present
-        await fetch(`${API_BASE_URL}/api/logout`, { 
-            method: 'POST', 
-            credentials: 'include',
-            headers: { 'X-CSRF-Token': getCSRFToken() }
-        });
-    } catch (error) {
-        console.error('Logout error:', error);
-    } finally {
-        // Clear session and redirect, but don't reload immediately
-        sessionStorage.clear();
-        // Use `location.replace` to avoid history caching
-        window.location.replace('index.html');
-    }
-}
-
-        async function handleLogout() {
-    try {
-        await initCSRF();  // ensure CSRF is present
-        await fetch(`${API_BASE_URL}/api/logout`, { 
-            method: 'POST', 
-            credentials: 'include',
-            headers: { 'X-CSRF-Token': getCSRFToken() }
-        });
-    } catch (error) {
-        console.error('Logout error:', error);
-    } finally {
-        // Clear session and redirect, but don't reload immediately
-        sessionStorage.clear();
-        // Use `location.replace` to avoid history caching
-        window.location.replace('index.html');
-    }
-}
-
-        async function handleLogout() {
-    try {
-        await initCSRF();  // ensure CSRF is present
-        await fetch(`${API_BASE_URL}/api/logout`, { 
-            method: 'POST', 
-            credentials: 'include',
-            headers: { 'X-CSRF-Token': getCSRFToken() }
-        });
-    } catch (error) {
-        console.error('Logout error:', error);
-    } finally {
-        // Clear session and redirect, but don't reload immediately
-        sessionStorage.clear();
-        // Use `location.replace` to avoid history caching
-        window.location.replace('index.html');
-    }
-}
-
-        async function handleLogout() {
-    try {
-        await initCSRF();  // ensure CSRF is present
-        await fetch(`${API_BASE_URL}/api/logout`, { 
-            method: 'POST', 
-            credentials: 'include',
-            headers: { 'X-CSRF-Token': getCSRFToken() }
-        });
-    } catch (error) {
-        console.error('Logout error:', error);
-    } finally {
-        // Clear session and redirect, but don't reload immediately
-        sessionStorage.clear();
-        // Use `location.replace` to avoid history caching
-        window.location.replace('index.html');
-    }
-}
-
-        async function handleLogout() {
-    try {
-        await initCSRF();  // ensure CSRF is present
-        await fetch(`${API_BASE_URL}/api/logout`, { 
-            method: 'POST', 
-            credentials: 'include',
-            headers: { 'X-CSRF-Token': getCSRFToken() }
-        });
-    } catch (error) {
-        console.error('Logout error:', error);
-    } finally {
-        // Clear session and redirect, but don't reload immediately
-        sessionStorage.clear();
-        // Use `location.replace` to avoid history caching
-        window.location.replace('index.html');
-    }
-}
-
-        async function handleLogout() {
-    try {
-        await initCSRF();  // ensure CSRF is present
-        await fetch(`${API_BASE_URL}/api/logout`, { 
-            method: 'POST', 
-            credentials: 'include',
-            headers: { 'X-CSRF-Token': getCSRFToken() }
-        });
-    } catch (error) {
-        console.error('Logout error:', error);
-    } finally {
-        // Clear session and redirect, but don't reload immediately
-        sessionStorage.clear();
-        // Use `location.replace` to avoid history caching
-        window.location.replace('index.html');
-    }
-}
-
-        async function handleLogout() {
-    try {
-        await initCSRF();  // ensure CSRF is present
-        await fetch(`${API_BASE_URL}/api/logout`, { 
-            method: 'POST', 
-            credentials: 'include',
-            headers: { 'X-CSRF-Token': getCSRFToken() }
-        });
-    } catch (error) {
-        console.error('Logout error:', error);
-    } finally {
-        // Clear session and redirect, but don't reload immediately
-        sessionStorage.clear();
-        // Use `location.replace` to avoid history caching
-        window.location.replace('index.html');
-    }
-}
-
-        async function handleLogout() {
-    try {
-        await initCSRF();  // ensure CSRF is present
-        await fetch(`${API_BASE_URL}/api/logout`, { 
-            method: 'POST', 
-            credentials: 'include',
-            headers: { 'X-CSRF-Token': getCSRFToken() }
-        });
-    } catch (error) {
-        console.error('Logout error:', error);
-    } finally {
-        // Clear session and redirect, but don't reload immediately
-        sessionStorage.clear();
-        // Use `location.replace` to avoid history caching
-        window.location.replace('index.html');
-    }
-}
-
-        async function handleLogout() {
-    try {
-        await initCSRF();  // ensure CSRF is present
-        await fetch(`${API_BASE_URL}/api/logout`, { 
-            method: 'POST', 
-            credentials: 'include',
-            headers: { 'X-CSRF-Token': getCSRFToken() }
-        });
-    } catch (error) {
-        console.error('Logout error:', error);
-    } finally {
-        // Clear session and redirect, but don't reload immediately
-        sessionStorage.clear();
-        // Use `location.replace` to avoid history caching
-        window.location.replace('index.html');
-    }
-}
-
-        async function handleLogout() {
-    try {
-        await initCSRF();  // ensure CSRF is present
-        await fetch(`${API_BASE_URL}/api/logout`, { 
-            method: 'POST', 
-            credentials: 'include',
-            headers: { 'X-CSRF-Token': getCSRFToken() }
-        });
-    } catch (error) {
-        console.error('Logout error:', error);
-    } finally {
-        // Clear session and redirect, but don't reload immediately
-        sessionStorage.clear();
-        // Use `location.replace` to avoid history caching
-        window.location.replace('index.html');
-    }
-}
-
-        async function handleLogout() {
-    try {
-        await initCSRF();  // ensure CSRF is present
-        await fetch(`${API_BASE_URL}/api/logout`, { 
-            method: 'POST', 
-            credentials: 'include',
-            headers: { 'X-CSRF-Token': getCSRFToken() }
-        });
-    } catch (error) {
-        console.error('Logout error:', error);
-    } finally {
-        // Clear session and redirect, but don't reload immediately
-        sessionStorage.clear();
-        // Use `location.replace` to avoid history caching
-        window.location.replace('index.html');
-    }
-}
-
-        async function handleLogout() {
-    try {
-        await initCSRF();  // ensure CSRF is present
-        await fetch(`${API_BASE_URL}/api/logout`, { 
-            method: 'POST', 
-            credentials: 'include',
-            headers: { 'X-CSRF-Token': getCSRFToken() }
-        });
-    } catch (error) {
-        console.error('Logout error:', error);
-    } finally {
-        // Clear session and redirect, but don't reload immediately
-        sessionStorage.clear();
-        // Use `location.replace` to avoid history caching
-        window.location.replace('index.html');
-    }
-}
-
-        async function handleLogout() {
-    try {
-        await initCSRF();  // ensure CSRF is present
-        await fetch(`${API_BASE_URL}/api/logout`, { 
-            method: 'POST', 
-            credentials: 'include',
-            headers: { 'X-CSRF-Token': getCSRFToken() }
-        });
-    } catch (error) {
-        console.error('Logout error:', error);
-    } finally {
-        // Clear session and redirect, but don't reload immediately
-        sessionStorage.clear();
-        // Use `location.replace` to avoid history caching
-        window.location.replace('index.html');
-    }
-}
-
-        async function handleLogout() {
-    try {
-        await initCSRF();  // ensure CSRF is present
-        await fetch(`${API_BASE_URL}/api/logout`, { 
-            method: 'POST', 
-            credentials: 'include',
-            headers: { 'X-CSRF-Token': getCSRFToken() }
-        });
-    } catch (error) {
-        console.error('Logout error:', error);
-    } finally {
-        // Clear session and redirect, but don't reload immediately
-        sessionStorage.clear();
-        // Use `location.replace` to avoid history caching
-        window.location.replace('index.html');
-    }
-}
-
-        async function handleLogout() {
-    try {
-        await initCSRF();  // ensure CSRF is present
-        await fetch(`${API_BASE_URL}/api/logout`, { 
-            method: 'POST', 
-            credentials: 'include',
-            headers: { 'X-CSRF-Token': getCSRFToken() }
-        });
-    } catch (error) {
-        console.error('Logout error:', error);
-    } finally {
-        // Clear session and redirect, but don't reload immediately
-        sessionStorage.clear();
-        // Use `location.replace` to avoid history caching
-        window.location.replace('index.html');
-    }
-}
-
-        async function handleLogout() {
-    try {
-        await initCSRF();  // ensure CSRF is present
-        await fetch(`${API_BASE_URL}/api/logout`, { 
-            method: 'POST', 
-            credentials: 'include',
-            headers: { 'X-CSRF-Token': getCSRFToken() }
-        });
-    } catch (error) {
-        console.error('Logout error:', error);
-    } finally {
-        // Clear session and redirect, but don't reload immediately
-        sessionStorage.clear();
-        // Use `location.replace` to avoid history caching
-        window.location.replace('index.html');
-    }
-}
-
-        async function handleLogout() {
-    try {
-        await initCSRF();  // ensure CSRF is present
-        await fetch(`${API_BASE_URL}/api/logout`, { 
-            method: 'POST', 
-            credentials: 'include',
-            headers: { 'X-CSRF-Token': getCSRFToken() }
-        });
-    } catch (error) {
-        console.error('Logout error:', error);
-    } finally {
-        // Clear session and redirect, but don't reload immediately
-        sessionStorage.clear();
-        // Use `location.replace` to avoid history caching
-        window.location.replace('index.html');
-    }
-}
-
 
         // TOS modal logic - use sessionStorage instead of localStorage
         function acceptTOS() {
