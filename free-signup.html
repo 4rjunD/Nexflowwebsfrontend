@@ -409,26 +409,32 @@
             return match ? decodeURIComponent(match[1]) : '';
         }
         async function initCSRF() {
-            const res = await fetch(`${API_BASE_URL}/api/csrf`, { credentials: 'include' });
-            const data = await res.json();
-            console.log("CSRF token initialized:", data.csrf_token);
+            try {
+                const res = await fetch(`${API_BASE_URL}/api/csrf`, { credentials: 'include' });
+                const data = await res.json();
+                console.log("CSRF token initialized:", data.csrf_token);
+                return data.csrf_token;
+            } catch (error) {
+                console.error("Failed to initialize CSRF token:", error);
+                throw error;
+            }
         }
 
         async function handleSignup(event) {
             event.preventDefault();
-            const name = document.getElementById('name').value;
-            const email = document.getElementById('email').value;
-            const password = document.getElementById('password').value;
-            const confirmPassword = document.getElementById('confirm-password').value;
-            const errorElement = document.getElementById('email-error');
-            const plan = "free";
-            if (password !== confirmPassword) {
-                document.getElementById('confirm-password-error').textContent = 'Passwords do not match';
-                document.getElementById('confirm-password-error').style.display = 'block';
-                return;
-            }
             try {
                 await initCSRF();
+                const name = document.getElementById('name').value;
+                const email = document.getElementById('email').value;
+                const password = document.getElementById('password').value;
+                const confirmPassword = document.getElementById('confirm-password').value;
+                const errorElement = document.getElementById('email-error');
+                const plan = "free";
+                if (password !== confirmPassword) {
+                    document.getElementById('confirm-password-error').textContent = 'Passwords do not match';
+                    document.getElementById('confirm-password-error').style.display = 'block';
+                    return;
+                }
                 const response = await fetch(`${API_BASE_URL}/api/signup`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json', 'X-CSRF-Token': getCSRFToken() },
@@ -448,6 +454,7 @@
                     errorElement.style.display = 'block';
                 }
             } catch (error) {
+                const errorElement = document.getElementById('email-error');
                 errorElement.textContent = `Error: ${error.message}. Please check your internet connection and try again.`;
                 errorElement.style.display = 'block';
             }
@@ -455,6 +462,7 @@
 
         async function upgradeToPro(plan) {
             try {
+                await initCSRF();
                 const response = await fetch(`${API_BASE_URL}/api/upgrade-to-pro`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json', 'X-CSRF-Token': getCSRFToken() },

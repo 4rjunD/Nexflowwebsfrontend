@@ -280,7 +280,6 @@
 
   <script>
     const API_BASE_URL = "https://nexflowwebs.onrender.com";
-
     // Ensure CSRF cookie is set on page load
     fetch(`${API_BASE_URL}/api/session`, { credentials: 'include' });
 
@@ -290,44 +289,48 @@
       return match ? decodeURIComponent(match[1]) : '';
     }
     async function initCSRF() {
-      const res = await fetch(`${API_BASE_URL}/api/csrf`, { credentials: 'include' });
-      const data = await res.json();
-      console.log("CSRF token initialized:", data.csrf_token);
+      try {
+        const res = await fetch(`${API_BASE_URL}/api/csrf`, { credentials: 'include' });
+        const data = await res.json();
+        console.log("CSRF token initialized:", data.csrf_token);
+        return data.csrf_token;
+      } catch (error) {
+        console.error("Failed to initialize CSRF token:", error);
+        throw error;
+      }
     }
 
 
     async function handleSignup(event) {
-      await initCSRF();
       event.preventDefault();
-
-      const name = document.getElementById('name').value;
-      const email = document.getElementById('email').value;
-      const password = document.getElementById('password').value;
-      const confirmPassword = document.getElementById('confirm-password').value;
-      const plan = "pro";
-
-      document.querySelectorAll('.error-message').forEach(el => el.style.display = 'none');
-
-      if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
-        document.getElementById('email-error').textContent = 'Please enter a valid email address';
-        document.getElementById('email-error').style.display = 'block';
-        return;
-      }
-
-      if (password.length < 8) {
-        document.getElementById('password-error').textContent = 'Password must be at least 8 characters long';
-        document.getElementById('password-error').style.display = 'block';
-        return;
-      }
-
-      if (password !== confirmPassword) {
-        document.getElementById('confirm-password-error').textContent = 'Passwords do not match';
-        document.getElementById('confirm-password-error').style.display = 'block';
-        return;
-      }
-
       try {
         await initCSRF();
+        const name = document.getElementById('name').value;
+        const email = document.getElementById('email').value;
+        const password = document.getElementById('password').value;
+        const confirmPassword = document.getElementById('confirm-password').value;
+        const plan = "pro";
+
+        document.querySelectorAll('.error-message').forEach(el => el.style.display = 'none');
+
+        if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+          document.getElementById('email-error').textContent = 'Please enter a valid email address';
+          document.getElementById('email-error').style.display = 'block';
+          return;
+        }
+
+        if (password.length < 8) {
+          document.getElementById('password-error').textContent = 'Password must be at least 8 characters long';
+          document.getElementById('password-error').style.display = 'block';
+          return;
+        }
+
+        if (password !== confirmPassword) {
+          document.getElementById('confirm-password-error').textContent = 'Passwords do not match';
+          document.getElementById('confirm-password-error').style.display = 'block';
+          return;
+        }
+
         const response = await fetch(`${API_BASE_URL}/api/signup`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json', 'X-CSRF-Token': getCSRFToken() },

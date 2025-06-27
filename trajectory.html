@@ -482,8 +482,21 @@
             return match ? decodeURIComponent(match[1]) : '';
         }
 
+        async function initCSRF() {
+            try {
+                const res = await fetch(`${API_BASE_URL}/api/csrf`, { credentials: 'include' });
+                const data = await res.json();
+                console.log("CSRF token initialized:", data.csrf_token);
+                return data.csrf_token;
+            } catch (error) {
+                console.error("Failed to initialize CSRF token:", error);
+                throw error;
+            }
+        }
+
         async function handleLogout() {
             try {
+                await initCSRF();
                 await fetch(`${API_BASE_URL}/api/logout`, { method: 'POST', credentials: 'include', headers: { 'X-CSRF-Token': getCSRFToken() } });
             } catch (error) {
                 console.error('Logout error:', error);

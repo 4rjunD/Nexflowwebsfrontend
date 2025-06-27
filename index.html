@@ -7,11 +7,12 @@
     if (window.location.pathname === "/index.html") {
       window.location.replace("/");
     }    
-  window.dataLayer = window.dataLayer || [];
-  function gtag(){dataLayer.push(arguments);}
-  gtag('js', new Date());
+    window.dataLayer = window.dataLayer || [];
+    function gtag(){dataLayer.push(arguments);}
+    gtag('js', new Date());
 
-  gtag('config', 'G-DX2DMYF5GM');
+    gtag('config', 'G-DX2DMYF5GM');
+
 </script>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -256,9 +257,15 @@
             : 'https://nexflowwebs.onrender.com';
         
         async function initCSRF() {
-            const res = await fetch(`${API_BASE_URL}/api/csrf`, { credentials: 'include' });
-            const data = await res.json();
-            console.log("CSRF token initialized:", data.csrf_token);
+            try {
+                const res = await fetch(`${API_BASE_URL}/api/csrf`, { credentials: 'include' });
+                const data = await res.json();
+                console.log("CSRF token initialized:", data.csrf_token);
+                return data.csrf_token;
+            } catch (error) {
+                console.error("Failed to initialize CSRF token:", error);
+                throw error;
+            }
         }
         // Ensure CSRF cookie is set on page load
         fetch(`${API_BASE_URL}/api/session`, { credentials: 'include' });
@@ -298,11 +305,11 @@
 
         async function handleLogin(event) {
             event.preventDefault();
-            await initCSRF();
-            const email = document.getElementById('email').value;
-            const password = document.getElementById('password').value;
-            const errorElement = document.getElementById('email-error');
             try {
+                await initCSRF();
+                const email = document.getElementById('email').value;
+                const password = document.getElementById('password').value;
+                const errorElement = document.getElementById('email-error');
                 const response = await fetch(`${API_BASE_URL}/api/login`, {
                     method: 'POST',
                     headers: {
@@ -323,6 +330,7 @@
                     errorElement.style.display = 'block';
                 }
             } catch (error) {
+                const errorElement = document.getElementById('email-error');
                 errorElement.textContent = `Error: ${error.message}. Please check your internet connection and try again.`;
                 errorElement.style.display = 'block';
             }
@@ -330,18 +338,18 @@
 
         async function handleSignup(event) {
             event.preventDefault();
-            await initCSRF();
-            const name = document.getElementById('signup-name').value;
-            const email = document.getElementById('signup-email').value;
-            const password = document.getElementById('signup-password').value;
-            const confirmPassword = document.getElementById('signup-confirm-password').value;
-            const errorElement = document.getElementById('signup-password-error');
-            if (password !== confirmPassword) {
-                errorElement.textContent = 'Passwords do not match';
-                errorElement.style.display = 'block';
-                return;
-            }
             try {
+                await initCSRF();
+                const name = document.getElementById('signup-name').value;
+                const email = document.getElementById('signup-email').value;
+                const password = document.getElementById('signup-password').value;
+                const confirmPassword = document.getElementById('signup-confirm-password').value;
+                const errorElement = document.getElementById('signup-password-error');
+                if (password !== confirmPassword) {
+                    errorElement.textContent = 'Passwords do not match';
+                    errorElement.style.display = 'block';
+                    return;
+                }
                 const response = await fetch(`${API_BASE_URL}/api/signup`, {
                     method: 'POST',
                     headers: {
@@ -362,33 +370,40 @@
                     errorElement.style.display = 'block';
                 }
             } catch (error) {
+                const errorElement = document.getElementById('signup-password-error');
                 errorElement.textContent = `Error: ${error.message}. Please check your internet connection and try again.`;
                 errorElement.style.display = 'block';
             }
         }
 
         async function handleLogout() {
-            await fetch(`${API_BASE_URL}/api/logout`, { method: 'POST', credentials: 'include', headers: { 'X-CSRF-Token': getCSRFToken() } });
-            window.location.href = 'index.html';
+            try {
+                await initCSRF();
+                await fetch(`${API_BASE_URL}/api/logout`, { method: 'POST', credentials: 'include', headers: { 'X-CSRF-Token': getCSRFToken() } });
+            } catch (error) {
+                console.error('Logout error:', error);
+            } finally {
+                window.location.href = 'index.html';
+            }
         }
 
-        function handleDemoLogin() {
-            fetch(`${API_BASE_URL}/api/use-demo`, {
-                method: 'POST',
-                credentials: 'include',
-                headers: { 'X-CSRF-Token': getCSRFToken() }
-            })
-            .then(res => res.json())
-            .then(data => {
+        async function handleDemoLogin() {
+            try {
+                await initCSRF();
+                const response = await fetch(`${API_BASE_URL}/api/use-demo`, {
+                    method: 'POST',
+                    credentials: 'include',
+                    headers: { 'X-CSRF-Token': getCSRFToken() }
+                });
+                const data = await response.json();
                 if (data.message && data.message.includes('Demo already used')) {
                     alert('Demo version has already been used. Please log in with your credentials to continue.');
                 } else {
                     window.location.href = 'irscore.html';
                 }
-            })
-            .catch(() => {
+            } catch (error) {
                 alert('Error starting demo. Please try again.');
-            });
+            }
         }
     </script>
 </body>

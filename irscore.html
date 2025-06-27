@@ -540,6 +540,18 @@
             return match ? decodeURIComponent(match[1]) : '';
         }
 
+        async function initCSRF() {
+            try {
+                const res = await fetch(`${API_BASE_URL}/api/csrf`, { credentials: 'include' });
+                const data = await res.json();
+                console.log("CSRF token initialized:", data.csrf_token);
+                return data.csrf_token;
+            } catch (error) {
+                console.error("Failed to initialize CSRF token:", error);
+                throw error;
+            }
+        }
+
         async function calculateIRScore(event) {
             event.preventDefault();
 
@@ -556,6 +568,7 @@
             }, 1000);
 
             try {
+                await initCSRF();
                 const age = parseInt(document.getElementById('age').value);
                 const genderStr = document.getElementById('gender').value;
                 const gender = genderStr === 'male' ? 1 : 0;
@@ -644,6 +657,7 @@
 
         async function handleLogout() {
             try {
+                await initCSRF();
                 // Call backend logout endpoint to clear session
                 await fetch(`${API_BASE_URL}/api/logout`, { 
                     method: 'POST', 
