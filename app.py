@@ -245,7 +245,15 @@ def logout():
         'token',
         httponly=True,
         secure=True,
-        samesite='None'
+        samesite='None',
+        path='/'
+    )
+    response.delete_cookie(
+        'csrf_token',
+        httponly=False,
+        secure=True,
+        samesite='None',
+        path='/'
     )
     return response
 

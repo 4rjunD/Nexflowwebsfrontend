@@ -567,7 +567,9 @@
             }, 1000);
 
             try {
-                await initCSRF();
+                const token = await initCSRF();
+                // Small wait to ensure cookie is written
+                await new Promise(resolve => setTimeout(resolve, 50));
                 const age = parseInt(document.getElementById('age').value);
                 const genderStr = document.getElementById('gender').value;
                 const gender = genderStr === 'male' ? 1 : 0;
@@ -668,8 +670,9 @@
             } finally {
                 // Clear any remaining client-side data
                 sessionStorage.clear();
-                // Redirect to login page
+                // Hard redirect to login page and reload to clear cookies
                 window.location.href = 'index.html';
+                setTimeout(() => { window.location.reload(); }, 100);
             }
         }
 
