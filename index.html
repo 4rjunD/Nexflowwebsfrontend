@@ -256,19 +256,13 @@
             ? 'http://localhost:5000'
             : 'https://nexflowwebs.onrender.com';
         
-        async function initCSRF() {
-            const res = await fetch(`${API_BASE_URL}/api/csrf`, { credentials: 'include' });
-            const data = await res.json();
-
-            // Small wait to ensure cookie is written (especially on Safari/Chrome strict mode)
-            // Wait until the CSRF cookie is written and matches the response token
-            await new Promise((resolve) => setTimeout(resolve, 150));
-            const match = document.cookie.match(/(?:^|; )csrf_token=([^;]*)/);
-            if (!match || decodeURIComponent(match[1]) !== data.csrf_token) {
-                console.warn("CSRF token mismatch or not written to cookie");
+            async function initCSRF() {
+                const res = await fetch(`${API_BASE_URL}/api/session`, { credentials: 'include' });
+                const data = await res.json();
+                const match = document.cookie.match(/(?:^|; )csrf_token=([^;]*)/);
+                return match ? decodeURIComponent(match[1]) : '';
             }
-            return data.csrf_token;
-        }
+
 
         // Ensure CSRF cookie is set on page load
         fetch(`${API_BASE_URL}/api/session`, { credentials: 'include' });

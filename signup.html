@@ -289,13 +289,10 @@
       return match ? decodeURIComponent(match[1]) : '';
     }
     async function initCSRF() {
-      const res = await fetch(`${API_BASE_URL}/api/csrf`, { credentials: 'include' });
+      const res = await fetch(`${API_BASE_URL}/api/session`, { credentials: 'include' });
       const data = await res.json();
-
-      // Small wait to ensure cookie is written (especially on Safari/Chrome strict mode)
-      await new Promise(resolve => setTimeout(resolve, 50));
-
-      return data.csrf_token;
+      const match = document.cookie.match(/(?:^|; )csrf_token=([^;]*)/);
+      return match ? decodeURIComponent(match[1]) : '';
     }
 
 

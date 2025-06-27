@@ -107,11 +107,13 @@ CSRF_HEADER_NAME = 'X-CSRF-Token'
 @app.before_request
 def csrf_protect():
     if request.method in ['POST', 'PUT', 'DELETE', 'PATCH'] and request.path.startswith('/api/'):
-        # Exclude login and signup GETs, but protect POSTs
         csrf_token_cookie = request.cookies.get(CSRF_COOKIE_NAME)
         csrf_token_header = request.headers.get(CSRF_HEADER_NAME)
-        if not csrf_token_cookie or not csrf_token_header or csrf_token_cookie != csrf_token_header:
-            return jsonify({'message': 'Missing or invalid CSRF token'}), 403
+        if not csrf_token_cookie or not csrf_token_header:
+            return jsonify({'message': 'Missing CSRF token'}), 403
+        if csrf_token_cookie != csrf_token_header:
+            return jsonify({'message': 'Invalid CSRF token'}), 403
+
 
 # Helper to set CSRF cookie
 @app.after_request
@@ -260,9 +262,25 @@ def logout():
 @app.route('/api/session', methods=['GET'])
 def session_status():
     token = request.cookies.get('token')
-    csrf_token = secrets.token_urlsafe(32)
+    csrf_token = request.cookies.get(CSRF_COOKIE_NAME)
+    
+    if not csrf_token:
+        csrf_token = secrets.token_urlsafe(32)
 
     resp = jsonify({"authenticated": False, "plan": None})
+    try:
+        if not token:
+            raise Exception("No token")
+        data = jwt.decode(token, app.config['JWT_SECRET_KEY'], algorithms=["HS256"])
+        user = User.query.get(data['user_id'])
+        if not user:
+            raise Exception("Invalid user")
+        plan = "pro" if user.is_pro else "free"
+        resp = jsonify({"authenticated": True, "plan": plan})
+    except Exception:
+        pass
+
+    # Set or refresh CSRF token cookie
     resp.set_cookie(
         CSRF_COOKIE_NAME, csrf_token,
         httponly=False,
@@ -270,27 +288,8 @@ def session_status():
         samesite='None',
         max_age=86400
     )
+    return resp
 
-    if not token:
-        return resp
-
-    try:
-        data = jwt.decode(token, app.config['JWT_SECRET_KEY'], algorithms=["HS256"])
-        user = User.query.get(data['user_id'])
-        if not user:
-            return resp
-        plan = "pro" if user.is_pro else "free"
-        resp = jsonify({"authenticated": True, "plan": plan})
-        resp.set_cookie(
-            CSRF_COOKIE_NAME, csrf_token,
-            httponly=False,
-            secure=True,
-            samesite='None',
-            max_age=86400
-        )
-        return resp
-    except Exception:
-        return resp
 
 
 
