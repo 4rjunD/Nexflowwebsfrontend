@@ -289,22 +289,21 @@
       return match ? decodeURIComponent(match[1]) : '';
     }
     async function initCSRF() {
-      try {
-        const res = await fetch(`${API_BASE_URL}/api/csrf`, { credentials: 'include' });
-        const data = await res.json();
-        console.log("CSRF token initialized:", data.csrf_token);
-        return data.csrf_token;
-      } catch (error) {
-        console.error("Failed to initialize CSRF token:", error);
-        throw error;
-      }
+      const res = await fetch(`${API_BASE_URL}/api/csrf`, { credentials: 'include' });
+      const data = await res.json();
+
+      // Small wait to ensure cookie is written (especially on Safari/Chrome strict mode)
+      await new Promise(resolve => setTimeout(resolve, 50));
+
+      return data.csrf_token;
     }
+
 
 
     async function handleSignup(event) {
       event.preventDefault();
       try {
-        await initCSRF();
+        const token = await initCSRF();
         const name = document.getElementById('name').value;
         const email = document.getElementById('email').value;
         const password = document.getElementById('password').value;
@@ -333,7 +332,7 @@
 
         const response = await fetch(`${API_BASE_URL}/api/signup`, {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json', 'X-CSRF-Token': getCSRFToken() },
+          headers: { 'Content-Type': 'application/json', 'X-CSRF-Token': token },
           credentials: 'include',
           body: JSON.stringify({ name, email, password, plan })
         });

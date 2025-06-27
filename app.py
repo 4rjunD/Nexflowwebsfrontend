@@ -107,9 +107,7 @@ CSRF_HEADER_NAME = 'X-CSRF-Token'
 @app.before_request
 def csrf_protect():
     if request.method in ['POST', 'PUT', 'DELETE', 'PATCH'] and request.path.startswith('/api/'):
-        # Skip CSRF check for session endpoint
-        if request.path == '/api/session':
-            return
+        # Exclude login and signup GETs, but protect POSTs
         csrf_token_cookie = request.cookies.get(CSRF_COOKIE_NAME)
         csrf_token_header = request.headers.get(CSRF_HEADER_NAME)
         if not csrf_token_cookie or not csrf_token_header or csrf_token_cookie != csrf_token_header:
@@ -118,7 +116,6 @@ def csrf_protect():
 # Helper to set CSRF cookie
 @app.after_request
 def set_csrf_cookie(response):
-    # Always set CSRF cookie for GET requests to ensure it's available
     if request.method == 'GET' and not request.cookies.get(CSRF_COOKIE_NAME):
         csrf_token = secrets.token_urlsafe(32)
         response.set_cookie(
@@ -126,7 +123,8 @@ def set_csrf_cookie(response):
             httponly=False,
             secure=True,
             samesite='None',
-            max_age=60*60*24
+            max_age=60*60*24,
+            path='/api/'
         )
     return response
 
@@ -253,18 +251,34 @@ def logout():
 
 @app.route('/api/session', methods=['GET'])
 def session_status():
+    csrf_token = secrets.token_urlsafe(32)
     token = request.cookies.get('token')
-    if not token:
-        return jsonify({"authenticated": False, "plan": None})
-    try:
-        data = jwt.decode(token, app.config['JWT_SECRET_KEY'], algorithms=["HS256"])
-        user = User.query.get(data['user_id'])
-        if not user:
-            return jsonify({"authenticated": False, "plan": None})
-        plan = "pro" if user.is_pro else "free"
-        return jsonify({"authenticated": True, "plan": plan})
-    except Exception:
-        return jsonify({"authenticated": False, "plan": None})
+
+    # Default values
+    authenticated = False
+    plan = None
+
+    if token:
+        try:
+            data = jwt.decode(token, app.config['JWT_SECRET_KEY'], algorithms=["HS256"])
+            user = User.query.get(data['user_id'])
+            if user:
+                authenticated = True
+                plan = "pro" if user.is_pro else "free"
+        except Exception:
+            pass  # Invalid token, fallback to unauthenticated
+
+    resp = jsonify({"authenticated": authenticated, "plan": plan})
+    resp.set_cookie(
+        CSRF_COOKIE_NAME, csrf_token,
+        httponly=False,
+        secure=True,
+        samesite='None',
+        max_age=60*60*24
+    )
+    return resp
+
+
 
 @app.route('/api/user', methods=['GET'])
 @token_required

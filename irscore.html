@@ -541,16 +541,15 @@
         }
 
         async function initCSRF() {
-            try {
-                const res = await fetch(`${API_BASE_URL}/api/csrf`, { credentials: 'include' });
-                const data = await res.json();
-                console.log("CSRF token initialized:", data.csrf_token);
-                return data.csrf_token;
-            } catch (error) {
-                console.error("Failed to initialize CSRF token:", error);
-                throw error;
-            }
+            const res = await fetch(`${API_BASE_URL}/api/csrf`, { credentials: 'include' });
+            const data = await res.json();
+
+            // Small wait to ensure cookie is written (especially on Safari/Chrome strict mode)
+            await new Promise(resolve => setTimeout(resolve, 50));
+
+            return data.csrf_token;
         }
+
 
         async function calculateIRScore(event) {
             event.preventDefault();

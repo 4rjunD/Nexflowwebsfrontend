@@ -257,16 +257,15 @@
             : 'https://nexflowwebs.onrender.com';
         
         async function initCSRF() {
-            try {
-                const res = await fetch(`${API_BASE_URL}/api/csrf`, { credentials: 'include' });
-                const data = await res.json();
-                console.log("CSRF token initialized:", data.csrf_token);
-                return data.csrf_token;
-            } catch (error) {
-                console.error("Failed to initialize CSRF token:", error);
-                throw error;
-            }
+            const res = await fetch(`${API_BASE_URL}/api/csrf`, { credentials: 'include' });
+            const data = await res.json();
+
+            // Small wait to ensure cookie is written (especially on Safari/Chrome strict mode)
+            await new Promise(resolve => setTimeout(resolve, 50));
+
+            return data.csrf_token;
         }
+
         // Ensure CSRF cookie is set on page load
         fetch(`${API_BASE_URL}/api/session`, { credentials: 'include' });
 
@@ -306,7 +305,7 @@
         async function handleLogin(event) {
             event.preventDefault();
             try {
-                await initCSRF();
+                const token = await initCSRF();
                 const email = document.getElementById('email').value;
                 const password = document.getElementById('password').value;
                 const errorElement = document.getElementById('email-error');
@@ -315,7 +314,7 @@
                     headers: {
                         'Content-Type': 'application/json',
                         'Accept': 'application/json',
-                        'X-CSRF-Token': getCSRFToken()
+                        'X-CSRF-Token': token
                     },
                     mode: 'cors',
                     credentials: 'include',
@@ -339,7 +338,7 @@
         async function handleSignup(event) {
             event.preventDefault();
             try {
-                await initCSRF();
+                const token = await initCSRF();
                 const name = document.getElementById('signup-name').value;
                 const email = document.getElementById('signup-email').value;
                 const password = document.getElementById('signup-password').value;
@@ -355,7 +354,7 @@
                     headers: {
                         'Content-Type': 'application/json',
                         'Accept': 'application/json',
-                        'X-CSRF-Token': getCSRFToken()
+                        'X-CSRF-Token': token
                     },
                     mode: 'cors',
                     credentials: 'include',
@@ -378,8 +377,8 @@
 
         async function handleLogout() {
             try {
-                await initCSRF();
-                await fetch(`${API_BASE_URL}/api/logout`, { method: 'POST', credentials: 'include', headers: { 'X-CSRF-Token': getCSRFToken() } });
+                const token = await initCSRF();
+                await fetch(`${API_BASE_URL}/api/logout`, { method: 'POST', credentials: 'include', headers: { 'X-CSRF-Token': token } });
             } catch (error) {
                 console.error('Logout error:', error);
             } finally {
@@ -389,11 +388,11 @@
 
         async function handleDemoLogin() {
             try {
-                await initCSRF();
+                const token = await initCSRF();
                 const response = await fetch(`${API_BASE_URL}/api/use-demo`, {
                     method: 'POST',
                     credentials: 'include',
-                    headers: { 'X-CSRF-Token': getCSRFToken() }
+                    headers: { 'X-CSRF-Token': token }
                 });
                 const data = await response.json();
                 if (data.message && data.message.includes('Demo already used')) {
