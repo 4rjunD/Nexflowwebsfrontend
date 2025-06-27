@@ -4,19 +4,15 @@
     <!-- Google tag (gtag.js) -->
 <script async src="https://www.googletagmanager.com/gtag/js?id=G-DX2DMYF5GM"></script>
 <script>
-    if (window.location.pathname === "/index.html") {
-      window.location.replace("/");
-    }
+    window.dataLayer = window.dataLayer || [];
+    function gtag(){dataLayer.push(arguments);}
+    gtag('js', new Date());
+    gtag('config', 'G-DX2DMYF5GM');
+
     document.addEventListener('DOMContentLoaded', async () => {
     await initCSRF();     // sets cookie
     checkSessionAndRedirect();
     });
-    window.dataLayer = window.dataLayer || [];
-    function gtag(){dataLayer.push(arguments);}
-    gtag('js', new Date());
-
-    gtag('config', 'G-DX2DMYF5GM');
-
 </script>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -256,18 +252,20 @@
 
     <script>
         // API URL configuration
-        const API_BASE_URL = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1'
-            ? 'http://localhost:5000'
-            : 'https://nexflowwebs.onrender.com';
-        
-            async function initCSRF() {
-                const res = await fetch(`${API_BASE_URL}/api/session`, { credentials: 'include' });
-                const data = await res.json();
-                const match = document.cookie.match(/(?:^|; )csrf_token=([^;]*)/);
-                return match ? decodeURIComponent(match[1]) : '';
-            }
+        const API_BASE_URL = 'https://nexflowwebs.onrender.com';
 
+        function getCSRFToken() {
+            const match = document.cookie.match(/(?:^|; )csrf_token=([^;]*)/);
+            return match ? decodeURIComponent(match[1]) : '';
+        }
 
+        async function initCSRF() {
+            await fetch(`${API_BASE_URL}/api/session`, { credentials: 'include' });
+        }
+
+        document.addEventListener('DOMContentLoaded', async () => {
+            await initCSRF(); // makes sure the csrf cookie is set
+        });
 
         // Ensure CSRF cookie is set on page load
         fetch(`${API_BASE_URL}/api/session`, { credentials: 'include' });
@@ -308,19 +306,14 @@
             document.getElementById('signup-container').style.display = 'none';
         }
 
-        // Helper to get CSRF token from cookie
-        function getCSRFToken() {
-            const match = document.cookie.match(/(?:^|; )csrf_token=([^;]*)/);
-            return match ? decodeURIComponent(match[1]) : '';
-        }
-
         async function handleLogin(event) {
             event.preventDefault();
             try {
                 const email = document.getElementById('email').value;
                 const password = document.getElementById('password').value;
                 const errorElement = document.getElementById('email-error');
-                const csrfToken = await initCSRF();
+                await initCSRF();
+                const csrfToken = getCSRFToken();
 
                 const response = await fetch(`${API_BASE_URL}/api/login`, {
                     method: 'POST',
@@ -333,6 +326,7 @@
                 });
 
                 const data = await response.json();
+
                 if (response.ok) {
                     // Session cookie set by backend
                     window.location.href = 'irscore.html';
