@@ -259,32 +259,38 @@ def logout():
 
 @app.route('/api/session', methods=['GET'])
 def session_status():
-    csrf_token = secrets.token_urlsafe(32)
     token = request.cookies.get('token')
+    csrf_token = secrets.token_urlsafe(32)
 
-    # Default values
-    authenticated = False
-    plan = None
-
-    if token:
-        try:
-            data = jwt.decode(token, app.config['JWT_SECRET_KEY'], algorithms=["HS256"])
-            user = User.query.get(data['user_id'])
-            if user:
-                authenticated = True
-                plan = "pro" if user.is_pro else "free"
-        except Exception:
-            pass  # Invalid token, fallback to unauthenticated
-
-    resp = jsonify({"authenticated": authenticated, "plan": plan})
+    resp = jsonify({"authenticated": False, "plan": None})
     resp.set_cookie(
         CSRF_COOKIE_NAME, csrf_token,
         httponly=False,
         secure=True,
         samesite='None',
-        max_age=60*60*24
+        max_age=86400
     )
-    return resp
+
+    if not token:
+        return resp
+
+    try:
+        data = jwt.decode(token, app.config['JWT_SECRET_KEY'], algorithms=["HS256"])
+        user = User.query.get(data['user_id'])
+        if not user:
+            return resp
+        plan = "pro" if user.is_pro else "free"
+        resp = jsonify({"authenticated": True, "plan": plan})
+        resp.set_cookie(
+            CSRF_COOKIE_NAME, csrf_token,
+            httponly=False,
+            secure=True,
+            samesite='None',
+            max_age=86400
+        )
+        return resp
+    except Exception:
+        return resp
 
 
 
