@@ -443,7 +443,7 @@
         // Initialize chart and sliders if userData exists
         function initializeChartAndSliders() {
             const ctx = document.getElementById('trajectoryChart').getContext('2d');
-            const chart = new Chart(ctx, {
+            let chart = new Chart(ctx, {
                 type: 'line',
                 data: {
                     labels: ['Week 1', 'Week 2', 'Week 3', 'Week 4', 'Week 5', 'Week 6'],
@@ -471,8 +471,80 @@
                     }
                 }
             });
-            // ... rest of slider and update logic ...
+
+            // Initialize slider values and event handlers
+            const sliders = {
+                carbs: { element: document.getElementById('carbs'), value: 50, label: '%' },
+                protein: { element: document.getElementById('protein'), value: 50, label: '%' },
+                fiber: { element: document.getElementById('fiber'), value: 50, label: '%' },
+                cardio: { element: document.getElementById('cardio'), value: 150, label: ' min' },
+                strength: { element: document.getElementById('strength'), value: 2, label: 'x/week' },
+                sleep: { element: document.getElementById('sleep'), value: 7, label: ' hrs' },
+                stress: { element: document.getElementById('stress'), value: 50, label: '%' }
+            };
+
+            // Set initial values and add event listeners
+            Object.keys(sliders).forEach(key => {
+                const slider = sliders[key];
+                const valueSpan = slider.element.parentElement.querySelector('.value');
+                
+                // Set initial value display
+                valueSpan.textContent = slider.value + slider.label;
+                
+                // Add event listener
+                slider.element.addEventListener('input', function() {
+                    slider.value = parseFloat(this.value);
+                    valueSpan.textContent = slider.value + slider.label;
+                    updateTrajectory(chart, sliders);
+                });
+            });
+
+            // Initial trajectory calculation
+            updateTrajectory(chart, sliders);
         }
+
+        // Calculate trajectory based on slider values
+        function updateTrajectory(chart, sliders) {
+            const baseScore = userData.score;
+            const trajectory = [baseScore];
+            
+            // Calculate trajectory for 6 weeks
+            for (let week = 1; week < 6; week++) {
+                let scoreChange = 0;
+                
+                // Diet factors
+                const carbFactor = (sliders.carbs.value - 50) / 50; // -1 to 1
+                const proteinFactor = (sliders.protein.value - 50) / 50;
+                const fiberFactor = (sliders.fiber.value - 50) / 50;
+                
+                // Exercise factors
+                const cardioFactor = (sliders.cardio.value - 150) / 150;
+                const strengthFactor = (sliders.strength.value - 2) / 2;
+                
+                // Sleep and stress factors
+                const sleepFactor = (sliders.sleep.value - 7) / 2; // -1.5 to 1.5
+                const stressFactor = (50 - sliders.stress.value) / 50; // Inverse relationship
+                
+                // Calculate weekly change
+                scoreChange += carbFactor * -0.5; // Lower carbs = better score
+                scoreChange += proteinFactor * 0.3; // Higher protein = better score
+                scoreChange += fiberFactor * 0.4; // Higher fiber = better score
+                scoreChange += cardioFactor * 0.6; // More cardio = better score
+                scoreChange += strengthFactor * 0.4; // More strength = better score
+                scoreChange += sleepFactor * 0.3; // More sleep = better score
+                scoreChange += stressFactor * 0.5; // Less stress = better score
+                
+                // Apply weekly change with diminishing returns
+                const weeklyChange = scoreChange * (1 - week * 0.1);
+                const newScore = Math.max(0, Math.min(100, trajectory[week - 1] + weeklyChange));
+                trajectory.push(newScore);
+            }
+            
+            // Update chart data
+            chart.data.datasets[0].data = trajectory;
+            chart.update('none'); // Update without animation for smoother slider response
+        }
+
         // Fetch IRScore data on page load
         window.addEventListener('DOMContentLoaded', fetchIRScoreData);
 
