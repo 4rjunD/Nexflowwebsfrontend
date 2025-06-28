@@ -126,7 +126,7 @@ def set_csrf_cookie(response):
             secure=True,
             samesite='None',
             max_age=60*60*24,
-            path='/api/'
+            path='/'
         )
     return response
 
