@@ -289,15 +289,15 @@
       return match ? decodeURIComponent(match[1]) : '';
     }
 
+    let csrfToken = "";
+
     async function initCSRF() {
-        await fetch(`${API_BASE_URL}/api/session`, {
+        const res = await fetch(`${API_BASE_URL}/api/session`, {
             credentials: 'include'
         });
-        // Wait until token shows up in document.cookie
-        for (let i = 0; i < 10; i++) {
-            if (document.cookie.includes('csrf_token=')) break;
-            await new Promise(resolve => setTimeout(resolve, 100)); // check every 100ms
-        }
+        const data = await res.json();
+        csrfToken = data.csrf_token;
+        console.log("CSRF Token from server:", csrfToken);
     }
 
 
@@ -313,7 +313,7 @@
       event.preventDefault();
       try {
         await initCSRF();
-        const csrfToken = getCSRFToken();
+        // const csrfToken = getCSRFToken();
         const name = document.getElementById('name').value;
         const email = document.getElementById('email').value;
         const password = document.getElementById('password').value;

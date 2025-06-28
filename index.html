@@ -259,16 +259,17 @@
             return match ? decodeURIComponent(match[1]) : '';
         }
 
+        let csrfToken = "";
+
         async function initCSRF() {
-            await fetch(`${API_BASE_URL}/api/session`, {
+            const res = await fetch(`${API_BASE_URL}/api/session`, {
                 credentials: 'include'
             });
-            // Wait until token shows up in document.cookie
-            for (let i = 0; i < 10; i++) {
-                if (document.cookie.includes('csrf_token=')) break;
-                await new Promise(resolve => setTimeout(resolve, 100)); // check every 100ms
-            }
+            const data = await res.json();
+            csrfToken = data.csrf_token;
+            console.log("CSRF Token from server:", csrfToken);
         }
+
 
 
 
@@ -322,7 +323,7 @@
                 const password = document.getElementById('password').value;
                 const errorElement = document.getElementById('email-error');
                 await initCSRF();
-                const csrfToken = getCSRFToken();
+                // const csrfToken = getCSRFToken();
                 console.log('CSRF Token being sent:', csrfToken);
                 console.log("CSRF Token (cookie):", document.cookie);
 
@@ -366,7 +367,7 @@
                     return;
                 }
                 await initCSRF();  // First: set cookie
-                const csrfToken = getCSRFToken();  // Then: read it from cookie
+                // csrfTokenconst csrfToken = getCSRFToken();  // Then: read it from cookie
                 const response = await fetch(`${API_BASE_URL}/api/signup`, {
                     method: 'POST',
                     headers: {
@@ -406,7 +407,7 @@
         async function handleDemoLogin() {
             try {
                 await initCSRF();
-                const token = getCSRFToken();
+                // const token = getCSRFToken();
                 const response = await fetch(`${API_BASE_URL}/api/use-demo`, {
                     method: 'POST',
                     credentials: 'include',

@@ -82,53 +82,80 @@ def token_required(f):
         return f(current_user, *args, **kwargs)
     return decorated
 
-@app.before_request
-def handle_options():
-    if request.method == 'OPTIONS':
-        return '', 204
+# @app.before_request
+# def handle_options():
+#     if request.method == 'OPTIONS':
+#         return '', 204
 
-# HTTPS enforcement
-@app.before_request
-def enforce_https():
-    if not request.is_secure and not app.debug and not app.testing:
-        if request.method == 'OPTIONS':
-            return '', 204  # Allow preflight through
-        elif request.method == 'GET':
-            url = request.url.replace('http://', 'https://', 1)
-            return '', 301, {'Location': url}
-        else:
-            return jsonify({'message': 'HTTPS required'}), 403
+# # HTTPS enforcement
+# @app.before_request
+# def enforce_https():
+#     if not request.is_secure and not app.debug and not app.testing:
+#         if request.method == 'OPTIONS':
+#             return '', 204  # Allow preflight through
+#         elif request.method == 'GET':
+#             url = request.url.replace('http://', 'https://', 1)
+#             return '', 301, {'Location': url}
+#         else:
+#             return jsonify({'message': 'HTTPS required'}), 403
 
 
 # CSRF protection: double submit cookie
 CSRF_COOKIE_NAME = 'csrf_token'
 CSRF_HEADER_NAME = 'X-CSRF-Token'
 
+# @app.before_request
+# def csrf_protect():
+#     if request.method in ['POST', 'PUT', 'DELETE', 'PATCH'] and request.path.startswith('/api/'):
+#         csrf_token_cookie = request.cookies.get(CSRF_COOKIE_NAME)
+#         csrf_token_header = request.headers.get(CSRF_HEADER_NAME)
+#         if not csrf_token_cookie or not csrf_token_header:
+#             return jsonify({'message': 'Missing CSRF token'}), 403
+#         if csrf_token_cookie != csrf_token_header:
+#             return jsonify({'message': 'Invalid CSRF token'}), 403
+
 @app.before_request
-def csrf_protect():
+def global_before_request():
+    # Handle OPTIONS preflight
+    if request.method == 'OPTIONS':
+        return '', 204
+
+    # Enforce HTTPS
+    if not request.is_secure and not app.debug and not app.testing:
+        if request.method == 'GET':
+            url = request.url.replace('http://', 'https://', 1)
+            return '', 301, {'Location': url}
+        else:
+            return jsonify({'message': 'HTTPS required'}), 403
+
+    # CSRF protection
     if request.method in ['POST', 'PUT', 'DELETE', 'PATCH'] and request.path.startswith('/api/'):
-        csrf_token_cookie = request.cookies.get(CSRF_COOKIE_NAME)
-        csrf_token_header = request.headers.get(CSRF_HEADER_NAME)
+        csrf_token_cookie = request.cookies.get('csrf_token')
+        csrf_token_header = request.headers.get('X-CSRF-Token')
         if not csrf_token_cookie or not csrf_token_header:
             return jsonify({'message': 'Missing CSRF token'}), 403
         if csrf_token_cookie != csrf_token_header:
             return jsonify({'message': 'Invalid CSRF token'}), 403
 
 
+
 # Helper to set CSRF cookie
 @app.after_request
 def set_csrf_cookie(response):
-    if request.method == 'GET' and not request.cookies.get(CSRF_COOKIE_NAME):
-        csrf_token = secrets.token_urlsafe(32)
-        response.set_cookie(
-            CSRF_COOKIE_NAME, csrf_token,
-            httponly=False,
-            secure=True,
-            samesite='None',
-            max_age=60*60*24,
-            path='/'
-        )
+    # Only touch CSRF cookie if path is session or root (GET-only setup)
+    if request.method == 'GET' and request.path in ['/', '/api/session']:
+        if not request.cookies.get(CSRF_COOKIE_NAME):
+            csrf_token = secrets.token_urlsafe(32)
+            response.set_cookie(
+                CSRF_COOKIE_NAME, csrf_token,
+                httponly=False,
+                secure=True,
+                samesite='None',
+                max_age=86400,
+                path='/'
+            )
     return response
+
 
 @app.route('/api/csrf', methods=['GET'])
 def get_csrf():
@@ -263,11 +290,16 @@ def logout():
 def session_status():
     token = request.cookies.get('token')
     csrf_token = request.cookies.get(CSRF_COOKIE_NAME)
-    
+
     if not csrf_token:
         csrf_token = secrets.token_urlsafe(32)
 
-    resp = jsonify({"authenticated": False, "plan": None})
+    resp = {
+        "authenticated": False,
+        "plan": None,
+        "csrf_token": csrf_token
+    }
+
     try:
         if not token:
             raise Exception("No token")
@@ -276,19 +308,22 @@ def session_status():
         if not user:
             raise Exception("Invalid user")
         plan = "pro" if user.is_pro else "free"
-        resp = jsonify({"authenticated": True, "plan": plan})
+        resp["authenticated"] = True
+        resp["plan"] = plan
     except Exception:
         pass
 
-    # Set or refresh CSRF token cookie
-    resp.set_cookie(
+    # Send token as cookie (for fallback) AND JSON
+    response = jsonify(resp)
+    response.set_cookie(
         CSRF_COOKIE_NAME, csrf_token,
         httponly=False,
         secure=True,
         samesite='None',
         max_age=86400
     )
-    return resp
+    return response
+
 
 
 
