@@ -635,6 +635,23 @@
         // Fetch IRScore data on page load
         window.addEventListener('DOMContentLoaded', fetchIRScoreData);
 
+        async function handleLogout() {
+            try {
+                const token = await initCSRF();  // ensure CSRF is present
+                await fetch(`${API_BASE_URL}/api/logout`, { 
+                    method: 'POST', 
+                    credentials: 'include',
+                    headers: { 'X-CSRF-Token': token }
+                });
+            } catch (error) {
+                console.error('Logout error:', error);
+            } finally {
+                sessionStorage.clear();
+                sessionStorage.setItem('justLoggedOut', 'true');  // new flag
+                window.location.replace('index.html');
+            }
+        }
+
         // Helper to get CSRF token from cookie
         function getCSRFToken() {
             const match = document.cookie.match(/(?:^|; )csrf_token=([^;]*)/);
@@ -649,19 +666,6 @@
             await new Promise(resolve => setTimeout(resolve, 50));
 
             return data.csrf_token;
-        }
-
-
-        async function handleLogout() {
-            try {
-                await initCSRF();
-                await fetch(`${API_BASE_URL}/api/logout`, { method: 'POST', credentials: 'include', headers: { 'X-CSRF-Token': getCSRFToken() } });
-            } catch (error) {
-                console.error('Logout error:', error);
-            } finally {
-                sessionStorage.clear();
-                window.location.href = 'index.html';
-            }
         }
     </script>
 </body>

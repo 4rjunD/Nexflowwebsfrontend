@@ -267,7 +267,7 @@
             });
             const data = await res.json();
             csrfToken = data.csrf_token;
-            console.log("CSRF Token from server:", csrfToken);
+            // console.log("CSRF Token from server:", csrfToken);
         }
 
 
@@ -324,8 +324,8 @@
                 const errorElement = document.getElementById('email-error');
                 await initCSRF();
                 // const csrfToken = getCSRFToken();
-                console.log('CSRF Token being sent:', csrfToken);
-                console.log("CSRF Token (cookie):", document.cookie);
+                // console.log('CSRF Token being sent:', csrfToken);
+                // console.log("CSRF Token (cookie):", document.cookie);
 
                 const response = await fetch(`${API_BASE_URL}/api/login`, {
                     method: 'POST',
@@ -395,7 +395,7 @@
 
         async function handleLogout() {
             try {
-                const token = await initCSRF();
+                await initCSRF();
                 await fetch(`${API_BASE_URL}/api/logout`, { method: 'POST', credentials: 'include', headers: { 'X-CSRF-Token': token } });
             } catch (error) {
                 console.error('Logout error:', error);
