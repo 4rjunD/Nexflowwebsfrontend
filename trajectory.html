@@ -193,6 +193,12 @@
             border-radius: 15px;
             margin-bottom: 2rem;
             box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            opacity: 0;
+            transform: translateY(30px);
+        }
+
+        .chart-container.animate {
+            animation: fadeInUp 1s ease-out forwards;
         }
 
         .controls {
@@ -207,6 +213,24 @@
             padding: 1.5rem;
             border-radius: 15px;
             box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            opacity: 0;
+            transform: translateY(30px);
+        }
+
+        .control-group.animate {
+            animation: fadeInUp 0.8s ease-out forwards;
+        }
+
+        .control-group:nth-child(1).animate {
+            animation-delay: 0.2s;
+        }
+
+        .control-group:nth-child(2).animate {
+            animation-delay: 0.4s;
+        }
+
+        .control-group:nth-child(3).animate {
+            animation-delay: 0.6s;
         }
 
         .control-group h3 {
@@ -327,6 +351,50 @@
             transform: translateY(-2px);
             box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
         }
+
+        /* Animation styles */
+        @keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translateY(30px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+            }
+            to {
+                opacity: 1;
+            }
+        }
+
+        @keyframes slideInFromLeft {
+            from {
+                opacity: 0;
+                transform: translateX(-30px);
+            }
+            to {
+                opacity: 1;
+                transform: translateX(0);
+            }
+        }
+
+        .animate-fade-in-up {
+            animation: fadeInUp 0.8s ease-out forwards;
+        }
+
+        .animate-fade-in {
+            animation: fadeIn 0.6s ease-out forwards;
+        }
+
+        .animate-slide-in-left {
+            animation: slideInFromLeft 0.6s ease-out forwards;
+        }
     </style>
 </head>
 <body>
@@ -345,12 +413,12 @@
             <p>See how different lifestyle changes affect your IRScore over time</p>
         </div>
 
-        <div class="chart-container">
+        <div class="chart-container animate">
             <canvas id="trajectoryChart"></canvas>
         </div>
 
         <div class="controls">
-            <div class="control-group">
+            <div class="control-group animate">
                 <h3>Diet Changes</h3>
                 <div class="toggle-group">
                     <div class="toggle-item">
@@ -371,7 +439,7 @@
                 </div>
             </div>
 
-            <div class="control-group">
+            <div class="control-group animate">
                 <h3>Exercise</h3>
                 <div class="toggle-group">
                     <div class="toggle-item">
@@ -387,7 +455,7 @@
                 </div>
             </div>
 
-            <div class="control-group">
+            <div class="control-group animate">
                 <h3>Sleep & Stress</h3>
                 <div class="toggle-group">
                     <div class="toggle-item">
@@ -435,6 +503,15 @@
             if (userData && userData.score !== undefined) {
                 mainContent.style.display = 'block';
                 noDataMessage.style.display = 'none';
+                
+                // Trigger animations with a small delay
+                setTimeout(() => {
+                    const chartContainer = document.querySelector('.chart-container');
+                    const controlGroups = document.querySelectorAll('.control-group');
+                    
+                    chartContainer.classList.add('animate');
+                    controlGroups.forEach(group => group.classList.add('animate'));
+                }, 100);
             } else {
                 mainContent.style.display = 'none';
                 noDataMessage.style.display = 'block';
