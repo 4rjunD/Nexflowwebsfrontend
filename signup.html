@@ -290,8 +290,12 @@
     }
 
     async function initCSRF() {
-      await fetch(`${API_BASE_URL}/api/session`, { credentials: 'include' });
+      const res = await fetch(`${API_BASE_URL}/api/session`, {
+        credentials: 'include'
+      });
+      await new Promise(resolve => setTimeout(resolve, 200)); // Wait for browser to commit cookie
     }
+
 
     document.addEventListener('DOMContentLoaded', async () => {
       await initCSRF(); // ensures CSRF cookie is available

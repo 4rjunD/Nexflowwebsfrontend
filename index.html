@@ -260,8 +260,12 @@
         }
 
         async function initCSRF() {
-            await fetch(`${API_BASE_URL}/api/session`, { credentials: 'include' });
+            const res = await fetch(`${API_BASE_URL}/api/session`, {
+                credentials: 'include'
+            });
+            await new Promise(resolve => setTimeout(resolve, 200)); // Wait for browser to commit cookie
         }
+
 
         document.addEventListener('DOMContentLoaded', async () => {
             await initCSRF(); // makes sure the csrf cookie is set
@@ -314,6 +318,7 @@
                 const errorElement = document.getElementById('email-error');
                 await initCSRF();
                 const csrfToken = getCSRFToken();
+                console.log('CSRF Token being sent:', csrfToken);
 
                 const response = await fetch(`${API_BASE_URL}/api/login`, {
                     method: 'POST',
@@ -354,8 +359,8 @@
                     errorElement.style.display = 'block';
                     return;
                 }
-                const csrfToken = await initCSRF();
-
+                await initCSRF();  // First: set cookie
+                const csrfToken = getCSRFToken();  // Then: read it from cookie
                 const response = await fetch(`${API_BASE_URL}/api/signup`, {
                     method: 'POST',
                     headers: {
