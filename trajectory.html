@@ -173,7 +173,7 @@
 
         .header {
             text-align: center;
-            color: white;
+            color: var(--primary-color);
             margin-bottom: 2rem;
         }
 
@@ -520,13 +520,17 @@
         // Initialize chart and sliders if userData exists
         function initializeChartAndSliders() {
             const ctx = document.getElementById('trajectoryChart').getContext('2d');
+            
+            // Start with all values at 0 for animation
+            const initialData = [0, 0, 0, 0, 0, 0];
+            
             let chart = new Chart(ctx, {
                 type: 'line',
                 data: {
                     labels: ['Week 1', 'Week 2', 'Week 3', 'Week 4', 'Week 5', 'Week 6'],
                     datasets: [{
                         label: 'IRScore Trajectory',
-                        data: [userData.score],
+                        data: initialData,
                         borderColor: '#8B5CF6',
                         backgroundColor: 'rgba(139, 92, 246, 0.1)',
                         tension: 0.4,
@@ -545,6 +549,10 @@
                             min: Math.max(0, userData.score - 20),
                             max: Math.min(100, userData.score + 20)
                         }
+                    },
+                    animation: {
+                        duration: 1500,
+                        easing: 'easeOutQuart'
                     }
                 }
             });
@@ -576,8 +584,10 @@
                 });
             });
 
-            // Initial trajectory calculation
-            updateTrajectory(chart, sliders);
+            // Animate the initial trajectory after a short delay
+            setTimeout(() => {
+                updateTrajectory(chart, sliders);
+            }, 500);
         }
 
         // Calculate trajectory based on slider values
@@ -617,9 +627,9 @@
                 trajectory.push(newScore);
             }
             
-            // Update chart data
+            // Update chart data with animation
             chart.data.datasets[0].data = trajectory;
-            chart.update('none'); // Update without animation for smoother slider response
+            chart.update('active'); // Use 'active' mode for smooth animation
         }
 
         // Fetch IRScore data on page load
