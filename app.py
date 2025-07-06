@@ -67,14 +67,6 @@ class IRScore(db.Model):
     score = db.Column(db.Float)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
 
-# Add a new model for demo usage tracking
-class DemoUsage(db.Model):
-    id = db.Column(db.Integer, primary_key=True)
-    ip_address = db.Column(db.String(45), nullable=False)  # IPv6 compatible
-    user_agent = db.Column(db.String(500))
-    used_at = db.Column(db.DateTime, default=datetime.utcnow)
-    session_id = db.Column(db.String(64), unique=True, nullable=False)  # Track by session
-
 # Token required decorator
 def token_required(f):
     @wraps(f)
@@ -84,17 +76,10 @@ def token_required(f):
             return jsonify({'message': 'Token is missing!'}), 401
         try:
             data = jwt.decode(token, app.config['JWT_SECRET_KEY'], algorithms=["HS256"])
-            
-            # Check if this is a demo session
-            if data.get('demo'):
-                # For demo sessions, pass None as current_user
-                return f(None, *args, **kwargs)
-            else:
-                # Regular user session
-                current_user = User.query.filter_by(hash_id=data['user_id']).first()
-                if not current_user:
-                    return jsonify({'message': 'Token is invalid!'}), 401
-                return f(current_user, *args, **kwargs)
+            current_user = User.query.filter_by(hash_id=data['user_id']).first()
+            if not current_user:
+                return jsonify({'message': 'Token is invalid!'}), 401
+            return f(current_user, *args, **kwargs)
         except:
             return jsonify({'message': 'Token is invalid!'}), 401
     return decorated
@@ -311,13 +296,6 @@ def logout():
         samesite='None',
         path='/'
     )
-    response.delete_cookie(
-        'session_id',
-        httponly=False,
-        secure=True,
-        samesite='None',
-        path='/'
-    )
     return response
 
 @app.route('/api/session', methods=['GET'])
@@ -331,28 +309,19 @@ def session_status():
     resp = {
         "authenticated": False,
         "plan": None,
-        "csrf_token": csrf_token,
-        "is_demo": False
+        "csrf_token": csrf_token
     }
 
     try:
         if not token:
             raise Exception("No token")
         data = jwt.decode(token, app.config['JWT_SECRET_KEY'], algorithms=["HS256"])
-        
-        # Check if this is a demo session
-        if data.get('demo'):
-            resp["authenticated"] = True
-            resp["plan"] = "demo"
-            resp["is_demo"] = True
-        else:
-            # Regular user session
-            user = User.query.filter_by(hash_id=data['user_id']).first()
-            if not user:
-                raise Exception("Invalid user")
-            plan = "pro" if user.is_pro else "free"
-            resp["authenticated"] = True
-            resp["plan"] = plan
+        user = User.query.filter_by(hash_id=data['user_id']).first()
+        if not user:
+            raise Exception("Invalid user")
+        plan = "pro" if user.is_pro else "free"
+        resp["authenticated"] = True
+        resp["plan"] = plan
     except Exception:
         pass
 
@@ -448,11 +417,6 @@ def db_check():
 @token_required
 def save_irscore(current_user):
     data = request.get_json()
-    
-    # For demo sessions, don't save to database
-    if current_user is None:
-        return jsonify({'message': 'IRScore calculated (demo mode)'})
-    
     irscore = IRScore(
         hash_id=current_user.hash_id,
         age=data.get('age'),
@@ -473,10 +437,6 @@ def save_irscore(current_user):
 @app.route('/api/irscore', methods=['GET'])
 @token_required
 def get_irscore(current_user):
-    # For demo sessions, return no data
-    if current_user is None:
-        return jsonify({'message': 'No IRScore data found'}), 404
-    
     irscore = IRScore.query.filter_by(hash_id=current_user.hash_id).order_by(IRScore.created_at.desc()).first()
     if not irscore:
         return jsonify({'message': 'No IRScore data found'}), 404
@@ -522,70 +482,6 @@ def refresh_token():
         return resp
     except Exception:
         return jsonify({'message': 'Invalid or expired refresh token'}), 401
-
-@app.route('/api/use-demo', methods=['POST'])
-@limiter.limit('5 per minute')
-def use_demo():
-    # Check if user is already authenticated (has an account)
-    token = request.cookies.get('token')
-    if token:
-        try:
-            data = jwt.decode(token, app.config['JWT_SECRET_KEY'], algorithms=["HS256"])
-            user = User.query.filter_by(hash_id=data['user_id']).first()
-            if user:
-                return jsonify({'message': 'Demo not available for registered users'}), 403
-        except:
-            pass  # Invalid token, continue with demo check
-    
-    # Check if demo has already been used from this IP
-    ip_address = request.remote_addr
-    existing_usage = DemoUsage.query.filter_by(ip_address=ip_address).first()
-    if existing_usage:
-        return jsonify({'message': 'Demo has already been used from this location'}), 403
-    
-    # Check if demo has been used in this session
-    session_id = request.cookies.get('session_id')
-    if not session_id:
-        session_id = secrets.token_urlsafe(32)
-    
-    existing_session = DemoUsage.query.filter_by(session_id=session_id).first()
-    if existing_session:
-        return jsonify({'message': 'Demo has already been used in this session'}), 403
-    
-    # Record demo usage
-    demo_usage = DemoUsage(
-        ip_address=ip_address,
-        user_agent=request.headers.get('User-Agent', ''),
-        session_id=session_id
-    )
-    db.session.add(demo_usage)
-    db.session.commit()
-    
-    # Create a temporary demo session token
-    demo_token = jwt.encode({
-        'demo': True,
-        'session_id': session_id,
-        'exp': datetime.utcnow() + timedelta(hours=2)  # Demo session expires in 2 hours
-    }, app.config['JWT_SECRET_KEY'], algorithm="HS256")
-    if isinstance(demo_token, bytes):
-        demo_token = demo_token.decode('utf-8')
-    
-    resp = jsonify({'message': 'Demo access granted'})
-    resp.set_cookie(
-        'token', demo_token,
-        httponly=True,
-        secure=True,
-        samesite='None',
-        max_age=7200  # 2 hours
-    )
-    resp.set_cookie(
-        'session_id', session_id,
-        httponly=False,
-        secure=True,
-        samesite='None',
-        max_age=7200
-    )
-    return resp
 
 @app.route('/api/<path:path>', methods=['OPTIONS'])
 def options_handler(path):

@@ -163,6 +163,112 @@
             display: none;
         }
 
+        /* Popup Modal Styles */
+        .popup-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.5);
+            display: none;
+            justify-content: center;
+            align-items: center;
+            z-index: 10000;
+            backdrop-filter: blur(5px);
+        }
+
+        .popup-modal {
+            background: white;
+            border-radius: 15px;
+            padding: 2rem;
+            max-width: 400px;
+            width: 90%;
+            text-align: center;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.3);
+            animation: popupSlideIn 0.3s ease-out;
+        }
+
+        @keyframes popupSlideIn {
+            from {
+                opacity: 0;
+                transform: translateY(-20px) scale(0.95);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0) scale(1);
+            }
+        }
+
+        .popup-title {
+            font-size: 1.5rem;
+            font-weight: 600;
+            color: #1F2937;
+            margin-bottom: 1rem;
+        }
+
+        .popup-message {
+            color: #6B7280;
+            line-height: 1.6;
+            margin-bottom: 1.5rem;
+        }
+
+        .popup-buttons {
+            display: flex;
+            gap: 1rem;
+            justify-content: center;
+        }
+
+        .popup-button {
+            padding: 0.75rem 1.5rem;
+            border: none;
+            border-radius: 8px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            min-width: 100px;
+        }
+
+        .popup-button.primary {
+            background: var(--primary-color);
+            color: white;
+        }
+
+        .popup-button.primary:hover {
+            background: #7C3AED;
+            transform: translateY(-1px);
+        }
+
+        .popup-button.secondary {
+            background: #E5E7EB;
+            color: #4B5563;
+        }
+
+        .popup-button.secondary:hover {
+            background: #D1D5DB;
+        }
+
+        .popup-icon {
+            font-size: 3rem;
+            margin-bottom: 1rem;
+        }
+
+        .popup-icon.success {
+            color: #10B981;
+        }
+
+        .popup-icon.error {
+            color: #EF4444;
+        }
+
+        .popup-icon.warning {
+            color: #F59E0B;
+        }
+
+        .popup-icon.info {
+            color: #3B82F6;
+        }
+
         .upgrade-link {
             margin-top: 1.5rem;
             padding-top: 1.5rem;
@@ -401,6 +507,18 @@
         </div>
     </div>
 
+    <!-- Popup Modal -->
+    <div class="popup-overlay" id="popup-overlay">
+        <div class="popup-modal">
+            <div class="popup-icon" id="popup-icon">⚠️</div>
+            <div class="popup-title" id="popup-title">Title</div>
+            <div class="popup-message" id="popup-message">Message</div>
+            <div class="popup-buttons" id="popup-buttons">
+                <button class="popup-button primary" onclick="closePopup()">OK</button>
+            </div>
+        </div>
+    </div>
+
     <script>
         const API_BASE_URL = "https://api.nexflowai.app/";
         document.addEventListener('DOMContentLoaded', async () => {
@@ -472,8 +590,10 @@
                 }
             } catch (error) {
                 const errorElement = document.getElementById('email-error');
-                errorElement.textContent = `Error: ${error.message}. Please check your internet connection and try again.`;
+                const errorMessage = `Error: ${error.message}. Please check your internet connection and try again.`;
+                errorElement.textContent = errorMessage;
                 errorElement.style.display = 'block';
+                showAlert(errorMessage, 'error');
             }
         }
 
@@ -493,13 +613,13 @@
                 const data = await response.json();
 
                 if (response.ok) {
-                    alert('Redirecting to payment page...');
+                    showAlert('Redirecting to payment page...', 'info');
                 } else {
-                    alert(data.message || 'Error upgrading to pro');
+                    showAlert(data.message || 'Error upgrading to pro', 'error');
                 }
             } catch (error) {
                 console.error('Upgrade error:', error);
-                alert('Error processing upgrade. Please try again.');
+                showAlert('Error processing upgrade. Please try again.', 'error');
             }
         }
 
@@ -509,6 +629,49 @@
         }
         function closeTOSModal() {
             document.getElementById('tos-modal').style.display = 'none';
+        }
+
+        // Popup Modal Functions
+        function showPopup(title, message, type = 'info', buttons = ['OK']) {
+            const overlay = document.getElementById('popup-overlay');
+            const icon = document.getElementById('popup-icon');
+            const titleEl = document.getElementById('popup-title');
+            const messageEl = document.getElementById('popup-message');
+            const buttonsEl = document.getElementById('popup-buttons');
+
+            // Set icon based on type
+            const icons = {
+                'success': '✅',
+                'error': '❌',
+                'warning': '⚠️',
+                'info': 'ℹ️'
+            };
+            icon.textContent = icons[type] || icons.info;
+            icon.className = `popup-icon ${type}`;
+
+            titleEl.textContent = title;
+            messageEl.textContent = message;
+
+            // Create buttons
+            buttonsEl.innerHTML = '';
+            buttons.forEach((button, index) => {
+                const btn = document.createElement('button');
+                btn.textContent = button.text || button;
+                btn.className = `popup-button ${index === 0 ? 'primary' : 'secondary'}`;
+                btn.onclick = button.onclick || (() => closePopup());
+                buttonsEl.appendChild(btn);
+            });
+
+            overlay.style.display = 'flex';
+        }
+
+        function closePopup() {
+            document.getElementById('popup-overlay').style.display = 'none';
+        }
+
+        // Replace alert with popup
+        function showAlert(message, type = 'info') {
+            showPopup('Notice', message, type);
         }
     </script>
 </body>
