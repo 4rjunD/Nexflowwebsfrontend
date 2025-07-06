@@ -25,6 +25,11 @@
                 const data = await res.json();
                 if (!data.authenticated) {
                     window.location.href = 'index.html';
+                } else {
+                    // Show demo banner if user is in demo mode
+                    if (data.is_demo) {
+                        document.getElementById('demo-banner').style.display = 'block';
+                    }
                 }
                 // else: stay on this page
             } catch {
@@ -72,6 +77,23 @@
             opacity: 0.9;
             animation: fadeInUp 1s ease 0.2s;
             animation-fill-mode: forwards;
+        }
+
+        .demo-banner {
+            background: linear-gradient(135deg, #F59E0B, #D97706);
+            color: white;
+            padding: 0.8rem 1.5rem;
+            border-radius: 10px;
+            margin-bottom: 1rem;
+            text-align: center;
+            font-weight: 500;
+            animation: fadeInUp 1s ease 0.3s;
+            animation-fill-mode: forwards;
+            opacity: 0;
+        }
+
+        .demo-banner strong {
+            font-weight: 600;
         }
 
         .nav-bar {
@@ -366,6 +388,12 @@
                 font-size: 0.9rem;
                 margin-bottom: 1rem;
             }
+
+            .demo-banner {
+                padding: 0.6rem 1rem;
+                font-size: 0.9rem;
+                margin-bottom: 0.5rem;
+            }
         }
     </style>
 </head>
@@ -378,6 +406,10 @@
             <a href="#" onclick="handleLogout()" class="logout-button">Logout</a>
         </div>
     </nav>
+
+    <div class="demo-banner" id="demo-banner" style="display: none;">
+        <strong>Demo Mode</strong> - You're using the free demo version. Create an account to save your results and access all features.
+    </div>
 
     <div class="calculator-container">
         <div class="form-section">
@@ -526,6 +558,12 @@
                 const sessionData = await sessionRes.json();
                 if (!sessionData.authenticated) {
                     window.location.href = 'index.html';
+                    return false;
+                }
+
+                // If user is in demo mode, only allow access to IRScore calculator
+                if (sessionData.is_demo && url !== 'irscore.html') {
+                    alert('Demo users can only access the IRScore calculator. Please create an account to access all features.');
                     return false;
                 }
 

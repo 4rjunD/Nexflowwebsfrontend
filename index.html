@@ -407,20 +407,27 @@
         async function handleDemoLogin() {
             try {
                 await initCSRF();
-                // const token = getCSRFToken();
                 const response = await fetch(`${API_BASE_URL}/api/use-demo`, {
                     method: 'POST',
                     credentials: 'include',
-                    headers: { 'X-CSRF-Token': token }
+                    headers: { 'X-CSRF-Token': csrfToken }
                 });
                 const data = await response.json();
-                if (data.message && data.message.includes('Demo already used')) {
-                    alert('Demo version has already been used. Please log in with your credentials to continue.');
-                } else {
+                
+                if (response.ok) {
                     window.location.href = 'irscore.html';
+                } else {
+                    if (data.message && data.message.includes('Demo not available for registered users')) {
+                        alert('Demo is only available for users without accounts. Please log in with your credentials.');
+                    } else if (data.message && data.message.includes('Demo has already been used')) {
+                        alert('Demo has already been used. Please create an account to continue using the platform.');
+                    } else {
+                        alert(data.message || 'Error starting demo. Please try again.');
+                    }
                 }
             } catch (error) {
-                alert('Error starting demo. Please try again.');
+                console.error('Demo login error:', error);
+                alert('Error starting demo. Please check your internet connection and try again.');
             }
         }
     </script>

@@ -45,17 +45,17 @@ limiter = Limiter(
 # User Model
 class User(db.Model):
     id = db.Column(db.Integer, primary_key=True)
+    hash_id = db.Column(db.String(64), unique=True, nullable=False)
     name = db.Column(db.String(100), nullable=False)
     email = db.Column(db.String(120), unique=True, nullable=False)
     password = db.Column(db.String(200), nullable=False)
     is_pro = db.Column(db.Boolean, default=False)
-    demo_used = db.Column(db.Boolean, default=False)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
 
 # Add a new model for IRScore data
 class IRScore(db.Model):
     id = db.Column(db.Integer, primary_key=True)
-    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
+    hash_id = db.Column(db.String(64), db.ForeignKey('user.hash_id'), nullable=False)
     age = db.Column(db.Integer)
     gender = db.Column(db.Integer)
     weight = db.Column(db.Float)
@@ -67,6 +67,14 @@ class IRScore(db.Model):
     score = db.Column(db.Float)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
 
+# Add a new model for demo usage tracking
+class DemoUsage(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    ip_address = db.Column(db.String(45), nullable=False)  # IPv6 compatible
+    user_agent = db.Column(db.String(500))
+    used_at = db.Column(db.DateTime, default=datetime.utcnow)
+    session_id = db.Column(db.String(64), unique=True, nullable=False)  # Track by session
+
 # Token required decorator
 def token_required(f):
     @wraps(f)
@@ -76,10 +84,19 @@ def token_required(f):
             return jsonify({'message': 'Token is missing!'}), 401
         try:
             data = jwt.decode(token, app.config['JWT_SECRET_KEY'], algorithms=["HS256"])
-            current_user = User.query.get(data['user_id'])
+            
+            # Check if this is a demo session
+            if data.get('demo'):
+                # For demo sessions, pass None as current_user
+                return f(None, *args, **kwargs)
+            else:
+                # Regular user session
+                current_user = User.query.filter_by(hash_id=data['user_id']).first()
+                if not current_user:
+                    return jsonify({'message': 'Token is invalid!'}), 401
+                return f(current_user, *args, **kwargs)
         except:
             return jsonify({'message': 'Token is invalid!'}), 401
-        return f(current_user, *args, **kwargs)
     return decorated
 
 # @app.before_request
@@ -139,6 +156,13 @@ def global_before_request():
 
 
 
+# Helper function to generate unique hash_id
+def generate_hash_id():
+    while True:
+        hash_id = secrets.token_urlsafe(32)
+        if not User.query.filter_by(hash_id=hash_id).first():
+            return hash_id
+
 # Helper to set CSRF cookie
 @app.after_request
 def set_csrf_cookie(response):
@@ -195,8 +219,12 @@ def signup():
     if User.query.filter_by(email=data['email']).first():
         return jsonify({'message': 'Email already registered'}), 400
     
+    # Generate unique hash_id
+    hash_id = generate_hash_id()
+    
     hashed_password = generate_password_hash(data['password'])
     new_user = User(
+        hash_id=hash_id,
         name=data['name'],
         email=data['email'],
         password=hashed_password,
@@ -208,7 +236,7 @@ def signup():
     
     # Generate JWT token for the new user
     token = jwt.encode({
-        'user_id': new_user.id,
+        'user_id': new_user.hash_id,
         'exp': datetime.utcnow() + app.config['JWT_ACCESS_TOKEN_EXPIRES']
     }, app.config['JWT_SECRET_KEY'], algorithm="HS256")
     if isinstance(token, bytes):
@@ -241,18 +269,17 @@ def login():
         return jsonify({'message': 'Invalid email or password'}), 401
     
     token = jwt.encode({
-        'user_id': user.id,
+        'user_id': user.hash_id,
         'exp': datetime.utcnow() + app.config['JWT_ACCESS_TOKEN_EXPIRES']
     }, app.config['JWT_SECRET_KEY'])
     
     response = jsonify({
         'message': 'Login successful',
         'user': {
-            'id': user.id,
+            'id': user.hash_id,
             'name': user.name,
             'email': user.email,
-            'is_pro': user.is_pro,
-            'demo_used': user.demo_used
+            'is_pro': user.is_pro
         }
     })
     
@@ -284,6 +311,13 @@ def logout():
         samesite='None',
         path='/'
     )
+    response.delete_cookie(
+        'session_id',
+        httponly=False,
+        secure=True,
+        samesite='None',
+        path='/'
+    )
     return response
 
 @app.route('/api/session', methods=['GET'])
@@ -297,19 +331,28 @@ def session_status():
     resp = {
         "authenticated": False,
         "plan": None,
-        "csrf_token": csrf_token
+        "csrf_token": csrf_token,
+        "is_demo": False
     }
 
     try:
         if not token:
             raise Exception("No token")
         data = jwt.decode(token, app.config['JWT_SECRET_KEY'], algorithms=["HS256"])
-        user = User.query.get(data['user_id'])
-        if not user:
-            raise Exception("Invalid user")
-        plan = "pro" if user.is_pro else "free"
-        resp["authenticated"] = True
-        resp["plan"] = plan
+        
+        # Check if this is a demo session
+        if data.get('demo'):
+            resp["authenticated"] = True
+            resp["plan"] = "demo"
+            resp["is_demo"] = True
+        else:
+            # Regular user session
+            user = User.query.filter_by(hash_id=data['user_id']).first()
+            if not user:
+                raise Exception("Invalid user")
+            plan = "pro" if user.is_pro else "free"
+            resp["authenticated"] = True
+            resp["plan"] = plan
     except Exception:
         pass
 
@@ -332,23 +375,13 @@ def session_status():
 @token_required
 def get_user(current_user):
     return jsonify({
-        'id': current_user.id,
+        'id': current_user.hash_id,
         'name': current_user.name,
         'email': current_user.email,
-        'is_pro': current_user.is_pro,
-        'demo_used': current_user.demo_used
+        'is_pro': current_user.is_pro
     })
 
-@app.route('/api/use-demo', methods=['POST'])
-@token_required
-def use_demo(current_user):
-    if current_user.demo_used:
-        return jsonify({'message': 'Demo already used'}), 400
-    
-    current_user.demo_used = True
-    db.session.commit()
-    
-    return jsonify({'message': 'Demo marked as used'})
+
 
 @app.route('/api/upgrade-to-pro', methods=['POST'])
 @token_required
@@ -415,8 +448,13 @@ def db_check():
 @token_required
 def save_irscore(current_user):
     data = request.get_json()
+    
+    # For demo sessions, don't save to database
+    if current_user is None:
+        return jsonify({'message': 'IRScore calculated (demo mode)'})
+    
     irscore = IRScore(
-        user_id=current_user.id,
+        hash_id=current_user.hash_id,
         age=data.get('age'),
         gender=data.get('gender'),
         weight=data.get('weight'),
@@ -435,7 +473,11 @@ def save_irscore(current_user):
 @app.route('/api/irscore', methods=['GET'])
 @token_required
 def get_irscore(current_user):
-    irscore = IRScore.query.filter_by(user_id=current_user.id).order_by(IRScore.created_at.desc()).first()
+    # For demo sessions, return no data
+    if current_user is None:
+        return jsonify({'message': 'No IRScore data found'}), 404
+    
+    irscore = IRScore.query.filter_by(hash_id=current_user.hash_id).order_by(IRScore.created_at.desc()).first()
     if not irscore:
         return jsonify({'message': 'No IRScore data found'}), 404
     return jsonify({
@@ -459,12 +501,12 @@ def refresh_token():
         return jsonify({'message': 'Missing refresh token'}), 401
     try:
         data = jwt.decode(refresh_token, app.config['JWT_SECRET_KEY'], algorithms=["HS256"])
-        user = User.query.get(data['user_id'])
+        user = User.query.filter_by(hash_id=data['user_id']).first()
         if not user:
             return jsonify({'message': 'Invalid refresh token'}), 401
         # Issue new access token
         access_token = jwt.encode({
-            'user_id': user.id,
+            'user_id': user.hash_id,
             'exp': datetime.utcnow() + app.config['JWT_ACCESS_TOKEN_EXPIRES']
         }, app.config['JWT_SECRET_KEY'], algorithm="HS256")
         if isinstance(access_token, bytes):
@@ -481,6 +523,69 @@ def refresh_token():
     except Exception:
         return jsonify({'message': 'Invalid or expired refresh token'}), 401
 
+@app.route('/api/use-demo', methods=['POST'])
+@limiter.limit('5 per minute')
+def use_demo():
+    # Check if user is already authenticated (has an account)
+    token = request.cookies.get('token')
+    if token:
+        try:
+            data = jwt.decode(token, app.config['JWT_SECRET_KEY'], algorithms=["HS256"])
+            user = User.query.filter_by(hash_id=data['user_id']).first()
+            if user:
+                return jsonify({'message': 'Demo not available for registered users'}), 403
+        except:
+            pass  # Invalid token, continue with demo check
+    
+    # Check if demo has already been used from this IP
+    ip_address = request.remote_addr
+    existing_usage = DemoUsage.query.filter_by(ip_address=ip_address).first()
+    if existing_usage:
+        return jsonify({'message': 'Demo has already been used from this location'}), 403
+    
+    # Check if demo has been used in this session
+    session_id = request.cookies.get('session_id')
+    if not session_id:
+        session_id = secrets.token_urlsafe(32)
+    
+    existing_session = DemoUsage.query.filter_by(session_id=session_id).first()
+    if existing_session:
+        return jsonify({'message': 'Demo has already been used in this session'}), 403
+    
+    # Record demo usage
+    demo_usage = DemoUsage(
+        ip_address=ip_address,
+        user_agent=request.headers.get('User-Agent', ''),
+        session_id=session_id
+    )
+    db.session.add(demo_usage)
+    db.session.commit()
+    
+    # Create a temporary demo session token
+    demo_token = jwt.encode({
+        'demo': True,
+        'session_id': session_id,
+        'exp': datetime.utcnow() + timedelta(hours=2)  # Demo session expires in 2 hours
+    }, app.config['JWT_SECRET_KEY'], algorithm="HS256")
+    if isinstance(demo_token, bytes):
+        demo_token = demo_token.decode('utf-8')
+    
+    resp = jsonify({'message': 'Demo access granted'})
+    resp.set_cookie(
+        'token', demo_token,
+        httponly=True,
+        secure=True,
+        samesite='None',
+        max_age=7200  # 2 hours
+    )
+    resp.set_cookie(
+        'session_id', session_id,
+        httponly=False,
+        secure=True,
+        samesite='None',
+        max_age=7200
+    )
+    return resp
 
 @app.route('/api/<path:path>', methods=['OPTIONS'])
 def options_handler(path):
