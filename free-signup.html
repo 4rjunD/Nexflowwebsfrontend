@@ -414,7 +414,7 @@
             display: flex;
             justify-content: center;
             align-items: center;
-            gap: 2rem;
+            gap: 0.5rem;
         }
         #role-selection-container {
             display: flex;
@@ -449,6 +449,11 @@
             <p id="signup-role-label">Create Your Account</p>
         </div>
         <form id="signup-form" onsubmit="handleSignup(event)">
+            <div class="form-group" id="clinic-id-group" style="display:none;">
+                <label for="clinic-id">Clinic ID</label>
+                <input type="text" id="clinic-id" name="clinic-id" maxlength="6" pattern="\d{6}" placeholder="Enter 6-digit Clinic ID">
+                <div class="error-message" id="clinic-id-error"></div>
+            </div>
             <div class="form-group">
                 <label for="name">Full Name</label>
                 <input type="text" id="name" name="name" required placeholder="Enter your full name">
@@ -467,11 +472,6 @@
                 <label for="confirm-password">Confirm Password</label>
                 <input type="password" autocomplete="off" id="confirm-password" name="confirm-password" required placeholder="Confirm your password">
                 <div class="error-message" id="confirm-password-error"></div>
-            </div>
-            <div class="form-group" id="clinician-code-group" style="display:none;">
-                <label for="clinician-code">Clinician Code</label>
-                <input type="text" id="clinician-code" name="clinician-code" maxlength="6" pattern="\\d{6}" placeholder="Enter 6-digit code">
-                <div class="error-message" id="clinician-code-error"></div>
             </div>
             <div class="terms">
                 <input type="checkbox" id="terms" required />
@@ -590,21 +590,23 @@
                 const password = document.getElementById('password').value;
                 const confirmPassword = document.getElementById('confirm-password').value;
                 const errorElement = document.getElementById('email-error');
-                const clinicianCode = document.getElementById('clinician-code').value;
-                document.getElementById('clinician-code-error').style.display = 'none';
+                const clinicId = document.getElementById('clinic-id').value;
+                document.getElementById('clinic-id-error').style.display = 'none';
                 if (password !== confirmPassword) {
                     document.getElementById('confirm-password-error').textContent = 'Passwords do not match';
                     document.getElementById('confirm-password-error').style.display = 'block';
                     return;
                 }
-                let body = { name, email, password, role: selectedRole };
                 if (selectedRole === 'clinician') {
-                    if (!clinicianCode || !/^\d{6}$/.test(clinicianCode)) {
-                        document.getElementById('clinician-code-error').textContent = 'Valid 6-digit code required';
-                        document.getElementById('clinician-code-error').style.display = 'block';
+                    if (!clinicId || !/^\d{6}$/.test(clinicId)) {
+                        document.getElementById('clinic-id-error').textContent = 'Valid 6-digit Clinic ID required';
+                        document.getElementById('clinic-id-error').style.display = 'block';
                         return;
                     }
-                    body.clinician_code = clinicianCode;
+                }
+                let body = { name, email, password, role: selectedRole };
+                if (selectedRole === 'clinician') {
+                    body.clinic_id = clinicId;
                 }
                 const response = await fetch(`${API_BASE_URL}/api/signup`, {
                     method: 'POST',
@@ -719,13 +721,16 @@
             document.getElementById('role-selection-container').style.display = 'none';
             document.getElementById('signup-form-container').style.display = 'block';
             document.getElementById('signup-role-label').textContent = 'Sign up as ' + role.charAt(0).toUpperCase() + role.slice(1);
-            document.getElementById('clinician-code-group').style.display = (role === 'clinician') ? 'block' : 'none';
+            document.getElementById('clinic-id-group').style.display = (role === 'clinician') ? 'block' : 'none';
         }
 
         // On page load, always show role selection and hide signup form
         document.addEventListener('DOMContentLoaded', () => {
-            document.getElementById('role-selection-container').style.display = 'block';
+            document.getElementById('role-selection-container').style.display = 'flex';
             document.getElementById('signup-form-container').style.display = 'none';
+            // Reset typing animation
+            typingIndex = 0;
+            typeText();
         });
     </script>
 </body>

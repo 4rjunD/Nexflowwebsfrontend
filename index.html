@@ -332,6 +332,11 @@
             <p id="login-role-label">Welcome Back</p>
         </div>
         <form id="login-form" onsubmit="handleLogin(event)">
+            <div class="form-group" id="clinic-id-group" style="display:none;">
+                <label for="clinic-id">Clinic ID</label>
+                <input type="text" id="clinic-id" name="clinic-id" maxlength="6" pattern="\d{6}" placeholder="Enter 6-digit Clinic ID">
+                <div class="error-message" id="clinic-id-error"></div>
+            </div>
             <div class="form-group">
                 <label for="email">Email</label>
                 <input type="email" id="email" name="email" required placeholder="Enter your email">
@@ -473,7 +478,20 @@
                 const email = document.getElementById('email').value;
                 const password = document.getElementById('password').value;
                 const errorElement = document.getElementById('email-error');
+                const clinicId = document.getElementById('clinic-id').value;
+                document.getElementById('clinic-id-error').style.display = 'none';
+                if (selectedRole === 'clinician') {
+                    if (!clinicId || !/^\d{6}$/.test(clinicId)) {
+                        document.getElementById('clinic-id-error').textContent = 'Valid 6-digit Clinic ID required';
+                        document.getElementById('clinic-id-error').style.display = 'block';
+                        return;
+                    }
+                }
                 await initCSRF();
+                let body = { email, password, role: selectedRole };
+                if (selectedRole === 'clinician') {
+                    body.clinic_id = clinicId;
+                }
                 const response = await fetch(`${API_BASE_URL}/api/login`, {
                     method: 'POST',
                     headers: {
@@ -481,7 +499,7 @@
                         'X-CSRF-Token': csrfToken
                     },
                     credentials: 'include',
-                    body: JSON.stringify({ email, password, role: selectedRole })
+                    body: JSON.stringify(body)
                 });
                 const data = await response.json();
                 if (response.ok) {
@@ -495,7 +513,7 @@
                     }
                     window.location.href = 'irscore.html';
                 } else {
-                    errorElement.textContent = data.message || 'Invalid email or password';
+                    errorElement.textContent = data.message || 'Invalid email, password, or clinic ID';
                     errorElement.style.display = 'block';
                 }
             } catch (error) {
@@ -633,6 +651,7 @@
             document.getElementById('role-selection-container').style.display = 'none';
             document.getElementById('login-form-container').style.display = 'block';
             document.getElementById('login-role-label').textContent = role.charAt(0).toUpperCase() + role.slice(1) + ' Login';
+            document.getElementById('clinic-id-group').style.display = (role === 'clinician') ? 'block' : 'none';
         }
     </script>
 </body>

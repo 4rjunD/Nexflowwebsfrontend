@@ -42,7 +42,14 @@ limiter = Limiter(
     default_limits=["200 per day", "50 per hour"]
 )
 
-# User Model
+# Clinic Model
+class Clinic(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    clinic_id = db.Column(db.String(6), unique=True, nullable=False)
+    name = db.Column(db.String(100), nullable=False)
+    address = db.Column(db.String(200), nullable=True)
+
+# Update User Model
 class User(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     hash_id = db.Column(db.String(64), unique=True, nullable=False)
@@ -55,6 +62,7 @@ class User(db.Model):
     role = db.Column(db.String(20), nullable=False, default='patient')  # 'patient' or 'clinician'
     clinician_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=True)  # For patients: their clinician
     pending_clinician_invite = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=True)  # For patients: pending invite from clinician
+    clinic_id = db.Column(db.String(6), db.ForeignKey('clinic.clinic_id'), nullable=True)  # Clinic affiliation
 
 # Add a new model for IRScore data
 class IRScore(db.Model):
@@ -211,60 +219,39 @@ def serve_static(path):
 @limiter.limit('5 per minute')
 def signup():
     data = request.get_json()
-    
     if User.query.filter_by(email=data['email']).first():
         return jsonify({'message': 'Email already registered'}), 400
-
-    # Role selection
     role = data.get('role', 'patient')
     if role not in ['patient', 'clinician']:
         return jsonify({'message': 'Invalid role'}), 400
-
-    # Clinician signup: require and validate code
+    clinic_id = None
     if role == 'clinician':
-        code = data.get('clinician_code')
-        if not code:
-            return jsonify({'message': 'Clinician code required'}), 400
-        code_obj = ClinicianCode.query.filter_by(code=code, used=False).first()
-        if not code_obj:
-            return jsonify({'message': 'Invalid or already used clinician code'}), 400
-
-    # Generate unique hash_id
+        clinic_id = data.get('clinic_id')
+        if not clinic_id or not Clinic.query.filter_by(clinic_id=clinic_id).first():
+            return jsonify({'message': 'Valid 6-digit Clinic ID required'}), 400
     hash_id = generate_hash_id()
-    
     hashed_password = generate_password_hash(data['password'])
     new_user = User(
         hash_id=hash_id,
         name=data['name'],
         email=data['email'],
         password=hashed_password,
-        is_pro=data['plan'] == "pro",
-        role=role
+        role=role,
+        clinic_id=clinic_id
     )
     db.session.add(new_user)
-    db.session.flush()  # Get new_user.id before commit
-
-    # If clinician, mark code as used
-    if role == 'clinician':
-        code_obj.used = True
-        code_obj.used_by = new_user.id
-        db.session.add(code_obj)
-
     db.session.commit()
-    
-    # Generate JWT token for the new user
     token = jwt.encode({
         'user_id': new_user.hash_id,
         'exp': datetime.utcnow() + app.config['JWT_ACCESS_TOKEN_EXPIRES']
     }, app.config['JWT_SECRET_KEY'], algorithm="HS256")
     if isinstance(token, bytes):
         token = token.decode('utf-8')
-    
     resp = jsonify({'message': 'User created successfully'})
     resp.set_cookie(
         'token', token,
         httponly=True,
-        secure=True,  # Only over HTTPS in production!
+        secure=True,
         samesite='None'
     )
     return resp, 201
@@ -281,26 +268,21 @@ def predict():
 @limiter.limit('10 per minute')
 def login():
     data = request.get_json()
-    user = User.query.filter_by(email=data['email']).first()
-    
+    role = data.get('role', 'patient')
+    if role == 'clinician':
+        clinic_id = data.get('clinic_id')
+        if not clinic_id:
+            return jsonify({'message': 'Clinic ID required'}), 400
+        user = User.query.filter_by(email=data['email'], role='clinician', clinic_id=clinic_id).first()
+    else:
+        user = User.query.filter_by(email=data['email'], role='patient').first()
     if not user or not check_password_hash(user.password, data['password']):
-        return jsonify({'message': 'Invalid email or password'}), 401
-    
+        return jsonify({'message': 'Invalid email, password, or clinic ID'}), 401
     token = jwt.encode({
         'user_id': user.hash_id,
         'exp': datetime.utcnow() + app.config['JWT_ACCESS_TOKEN_EXPIRES']
     }, app.config['JWT_SECRET_KEY'])
-    
-    response = jsonify({
-        'message': 'Login successful',
-        'user': {
-            'id': user.hash_id,
-            'name': user.name,
-            'email': user.email,
-            'is_pro': user.is_pro
-        }
-    })
-    
+    response = jsonify({'message': 'Login successful'})
     response.set_cookie(
         'token',
         token,
@@ -309,7 +291,6 @@ def login():
         samesite='None',
         max_age=86400
     )
-    
     return response
 
 @app.route('/api/logout', methods=['POST'])
@@ -557,6 +538,9 @@ def patient_respond_invite(current_user):
     if not current_user.pending_clinician_invite:
         return jsonify({'message': 'No pending invite'}), 400
     if action == 'accept':
+        clinician = User.query.get(current_user.pending_clinician_invite)
+        if clinician and clinician.clinic_id:
+            current_user.clinic_id = clinician.clinic_id
         current_user.clinician_id = current_user.pending_clinician_invite
         current_user.pending_clinician_invite = None
         db.session.commit()
@@ -677,7 +661,7 @@ def options_handler(path):
     return '', 204
 
 
-# Create database tables and seed clinician codes
+# Create database tables and seed clinician codes and clinics
 with app.app_context():
     db.create_all()
     # Seed clinician codes if not present
@@ -689,6 +673,16 @@ with app.app_context():
             codes.add(code)
         for code in codes:
             db.session.add(ClinicianCode(code=code))
+        db.session.commit()
+    # Seed clinics if not present
+    if Clinic.query.count() == 0:
+        import random
+        clinic_codes = set()
+        while len(clinic_codes) < 100:
+            code = f"{random.randint(0, 999999):06d}"
+            clinic_codes.add(code)
+        for code in clinic_codes:
+            db.session.add(Clinic(clinic_id=code, name=f"Clinic {code}", address=""))
         db.session.commit()
 
 if __name__ == '__main__':
