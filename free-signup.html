@@ -391,7 +391,7 @@
             padding: 1.2rem 2.5rem;
             border-radius: 16px;
             border: none;
-            margin: 0 1.5rem;
+            margin: 0;
             background: var(--gradient);
             color: white;
             font-weight: 600;
@@ -436,11 +436,11 @@
     <div class="signup-container" id="role-selection-container">
         <div class="logo">
             <h1>NexFlow</h1>
-            <p id="typing-text" style="font-size:1.3rem; color:#6B7280; min-height:2.5rem;"></p>
+            <p id="typing-text" style="font-size:1.3rem; color:#6B7280; min-height:2.5rem;">Are you a...?</p>
         </div>
-        <div id="role-options" style="display:none; margin-top:2rem;">
-            <button class="role-btn" id="patient-btn">Patient</button>
-            <button class="role-btn" id="clinician-btn">Clinician</button>
+        <div id="role-options" style="display:flex; margin-top:2rem;">
+            <button class="role-btn visible" id="patient-btn">Patient</button>
+            <button class="role-btn visible" id="clinician-btn">Clinician</button>
         </div>
     </div>
     <div class="signup-container" id="signup-form-container" style="display:none;">
@@ -481,6 +481,18 @@
             <div class="login-link">Already have an account? <a href="index.html">Log in</a></div>
         </form>
     </div>
+    <noscript>
+        <style>#role-selection-container{display:none!important;}#signup-form-container{display:block!important;}</style>
+        <div class="signup-container">
+            <div class="logo"><h1>NexFlow</h1></div>
+            <p>JavaScript is required for the full signup experience. Please enable JavaScript.</p>
+            <form>
+                <div class="form-group"><label>Email</label><input type="email" required></div>
+                <div class="form-group"><label>Password</label><input type="password" required></div>
+                <button type="submit" class="signup-button">Sign Up</button>
+            </form>
+        </div>
+    </noscript>
 
     <!-- Terms of Service Modal (copied from irscore.html) -->
     <div id="tos-modal" style="
@@ -713,24 +725,32 @@
         // Role selection logic
         let selectedRole = 'patient';
         document.addEventListener('DOMContentLoaded', () => {
+            // Check for role in hash or sessionStorage
+            let roleFromHash = (window.location.hash === '#clinician' || window.location.hash === '#patient') ? window.location.hash.replace('#','') : null;
+            let roleFromSession = sessionStorage.getItem('selectedRole');
+            let role = roleFromHash || roleFromSession;
+            if (role === 'clinician' || role === 'patient') {
+                selectedRole = role;
+                document.getElementById('role-selection-container').style.display = 'none';
+                document.getElementById('signup-form-container').style.display = 'block';
+                document.getElementById('signup-role-label').textContent = 'Sign up as ' + role.charAt(0).toUpperCase() + role.slice(1);
+                document.getElementById('clinic-id-group').style.display = (role === 'clinician') ? 'block' : 'none';
+            } else {
+                // Show role selection if no role is found
+                document.getElementById('role-selection-container').style.display = 'flex';
+                document.getElementById('signup-form-container').style.display = 'none';
+            }
+            // Role selection buttons
             document.getElementById('patient-btn').onclick = () => showSignupForm('patient');
             document.getElementById('clinician-btn').onclick = () => showSignupForm('clinician');
-        });
-        function showSignupForm(role) {
-            selectedRole = role;
-            document.getElementById('role-selection-container').style.display = 'none';
-            document.getElementById('signup-form-container').style.display = 'block';
-            document.getElementById('signup-role-label').textContent = 'Sign up as ' + role.charAt(0).toUpperCase() + role.slice(1);
-            document.getElementById('clinic-id-group').style.display = (role === 'clinician') ? 'block' : 'none';
-        }
-
-        // On page load, always show role selection and hide signup form
-        document.addEventListener('DOMContentLoaded', () => {
-            document.getElementById('role-selection-container').style.display = 'flex';
-            document.getElementById('signup-form-container').style.display = 'none';
-            // Reset typing animation
-            typingIndex = 0;
-            typeText();
+            function showSignupForm(role) {
+                selectedRole = role;
+                sessionStorage.setItem('selectedRole', role);
+                document.getElementById('role-selection-container').style.display = 'none';
+                document.getElementById('signup-form-container').style.display = 'block';
+                document.getElementById('signup-role-label').textContent = 'Sign up as ' + role.charAt(0).toUpperCase() + role.slice(1);
+                document.getElementById('clinic-id-group').style.display = (role === 'clinician') ? 'block' : 'none';
+            }
         });
     </script>
 </body>

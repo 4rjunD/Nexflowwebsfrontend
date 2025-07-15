@@ -274,7 +274,7 @@
             padding: 1.2rem 2.5rem;
             border-radius: 16px;
             border: none;
-            margin: 0 1.5rem;
+            margin: 0;
             background: var(--gradient);
             color: white;
             font-weight: 600;
@@ -297,7 +297,7 @@
             display: flex;
             justify-content: center;
             align-items: center;
-            gap: 2rem;
+            gap:1rem;
         }
         #role-selection-container {
             display: flex;
@@ -648,11 +648,24 @@
         });
         function showLoginForm(role) {
             selectedRole = role;
+            sessionStorage.setItem('selectedRole', role); // Store role for signup page
             document.getElementById('role-selection-container').style.display = 'none';
             document.getElementById('login-form-container').style.display = 'block';
             document.getElementById('login-role-label').textContent = role.charAt(0).toUpperCase() + role.slice(1) + ' Login';
             document.getElementById('clinic-id-group').style.display = (role === 'clinician') ? 'block' : 'none';
+            // Update signup link to include role hash
+            const signupLink = document.querySelector('.signup-link a');
+            if (signupLink) {
+                signupLink.href = `free-signup.html#${role}`;
+            }
         }
+        // Also update the signup link on initial load
+        document.addEventListener('DOMContentLoaded', () => {
+            const signupLink = document.querySelector('.signup-link a');
+            if (signupLink) {
+                signupLink.href = `free-signup.html#${selectedRole}`;
+            }
+        });
     </script>
 </body>
 </html> 
