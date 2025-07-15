@@ -74,6 +74,30 @@
             }
         }
         checkSessionAndPlan();
+        async function checkSessionOrRedirect() {
+            try {
+                const res = await fetch(`${API_BASE_URL}/api/session`, { credentials: 'include' });
+                if (!res.ok) throw new Error('Not authenticated');
+                const data = await res.json();
+                if (!data.authenticated) {
+                    window.location.href = 'index.html';
+                    return;
+                }
+                // Role check: if clinician, redirect
+                const userRes = await fetch(`${API_BASE_URL}/api/user`, { credentials: 'include' });
+                if (userRes.ok) {
+                    const userData = await userRes.json();
+                    if (userData.role === 'clinician') {
+                        window.location.href = 'clinical-dashboard.html';
+                        return;
+                    }
+                }
+                // else: stay on this page
+            } catch {
+                window.location.href = 'index.html';
+            }
+        }
+        checkSessionOrRedirect();
     </script>
     <link rel="stylesheet" href="styles.css">
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
@@ -439,13 +463,8 @@
     </style>
 </head>
 <body>
-    <nav class="nav-bar">
-        <div class="nav-links">
-            <a href="irscore.html">IRScore Calculator</a>
-            <a href="trajectory.html" class="active">Trajectory Panel</a>
-            <a href="recommendations.html">Recommendations</a>
-            <a href="#" onclick="handleLogout()" class="logout-button">Logout</a>
-        </div>
+    <nav class="nav-bar" id="main-nav">
+        <div class="nav-links" id="nav-links"></div>
     </nav>
 
     <div class="container" id="main-content" style="display: none;">
@@ -708,6 +727,30 @@
 
             return data.csrf_token;
         }
+
+        async function renderNavBar() {
+            const navLinks = document.getElementById('nav-links');
+            try {
+                const res = await fetch(`${API_BASE_URL}/api/user`, { credentials: 'include' });
+                if (!res.ok) throw new Error('Not authenticated');
+                const data = await res.json();
+                if (data.role === 'patient') {
+                    navLinks.innerHTML = `
+                        <a href="irscore.html">IRScore Calculator</a>
+                        <a href="recommendations.html">Recommendations</a>
+                        <a href="#" onclick="handleLogout()" class="logout-button">Logout</a>
+                    `;
+                } else if (data.role === 'clinician') {
+                    navLinks.innerHTML = `
+                        <a href="clinical-dashboard.html" class="active">Dashboard</a>
+                        <a href="#" onclick="handleLogout()" class="logout-button">Logout</a>
+                    `;
+                }
+            } catch {
+                navLinks.innerHTML = '';
+            }
+        }
+        window.addEventListener('DOMContentLoaded', renderNavBar);
     </script>
 </body>
 </html> 

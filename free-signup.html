@@ -404,6 +404,13 @@
         </div>
         <form id="signup-form" onsubmit="handleSignup(event)">
             <div class="form-group">
+                <label for="role">Sign up as:</label>
+                <div style="display: flex; gap: 1rem; margin-bottom: 1rem;">
+                    <label><input type="radio" name="role" value="patient" checked onchange="toggleClinicianCode()"> Patient</label>
+                    <label><input type="radio" name="role" value="clinician" onchange="toggleClinicianCode()"> Clinician</label>
+                </div>
+            </div>
+            <div class="form-group">
                 <label for="name">Full Name</label>
                 <input type="text" id="name" name="name" required placeholder="Enter your full name">
             </div>
@@ -421,6 +428,11 @@
                 <label for="confirm-password">Confirm Password</label>
                 <input type="password" autocomplete="off" id="confirm-password" name="confirm-password" required placeholder="Confirm your password">
                 <div class="error-message" id="confirm-password-error"></div>
+            </div>
+            <div class="form-group" id="clinician-code-group" style="display:none;">
+                <label for="clinician-code">Clinician Code</label>
+                <input type="text" id="clinician-code" name="clinician-code" maxlength="6" pattern="\\d{6}" placeholder="Enter 6-digit code">
+                <div class="error-message" id="clinician-code-error"></div>
             </div>
             <div class="terms">
                 <input type="checkbox" id="terms" required />
@@ -557,11 +569,15 @@
             try {
                 await initCSRF(); // make sure cookie is set
 
+                const role = document.querySelector('input[name="role"]:checked').value;
                 const name = document.getElementById('name').value;
                 const email = document.getElementById('email').value;
                 const password = document.getElementById('password').value;
                 const confirmPassword = document.getElementById('confirm-password').value;
                 const errorElement = document.getElementById('email-error');
+                const clinicianCode = document.getElementById('clinician-code').value;
+
+                document.getElementById('clinician-code-error').style.display = 'none';
 
                 if (password !== confirmPassword) {
                     document.getElementById('confirm-password-error').textContent = 'Passwords do not match';
@@ -571,6 +587,16 @@
 
                 // const csrfToken = getCSRFToken();
 
+                let body = { name, email, password, plan: "free", role };
+                if (role === 'clinician') {
+                    if (!clinicianCode || !/^\d{6}$/.test(clinicianCode)) {
+                        document.getElementById('clinician-code-error').textContent = 'Valid 6-digit code required';
+                        document.getElementById('clinician-code-error').style.display = 'block';
+                        return;
+                    }
+                    body.clinician_code = clinicianCode;
+                }
+
                 const response = await fetch(`${API_BASE_URL}/api/signup`, {
                     method: 'POST',
                     headers: {
@@ -578,7 +604,7 @@
                         'X-CSRF-Token': csrfToken
                     },
                     credentials: 'include',
-                    body: JSON.stringify({ name, email, password, plan: "free" })
+                    body: JSON.stringify(body)
                 });
 
                 const data = await response.json();
@@ -672,6 +698,11 @@
         // Replace alert with popup
         function showAlert(message, type = 'info') {
             showPopup('Notice', message, type);
+        }
+
+        function toggleClinicianCode() {
+            const role = document.querySelector('input[name="role"]:checked').value;
+            document.getElementById('clinician-code-group').style.display = (role === 'clinician') ? 'block' : 'none';
         }
     </script>
 </body>

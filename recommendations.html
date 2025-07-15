@@ -450,13 +450,8 @@
     </style>
 </head>
 <body>
-    <nav class="nav-bar">
-        <div class="nav-links">
-            <a href="irscore.html">IRScore Calculator</a>
-            <a href="trajectory.html">Trajectory Panel</a>
-            <a href="recommendations.html" class="active">Recommendations</a>
-            <a href="#" onclick="handleLogout()" class="logout-button">Logout</a>
-        </div>
+    <nav class="nav-bar" id="main-nav">
+        <div class="nav-links" id="nav-links"></div>
     </nav>
 
     <div class="container" id="main-content" style="display: none;">
@@ -554,6 +549,30 @@
                 window.location.replace('index.html');
             }
         }
+
+        async function renderNavBar() {
+            const navLinks = document.getElementById('nav-links');
+            try {
+                const res = await fetch(`${API_BASE_URL}/api/user`, { credentials: 'include' });
+                if (!res.ok) throw new Error('Not authenticated');
+                const data = await res.json();
+                if (data.role === 'patient') {
+                    navLinks.innerHTML = `
+                        <a href="irscore.html">IRScore Calculator</a>
+                        <a href="recommendations.html" class="active">Recommendations</a>
+                        <a href="#" onclick="handleLogout()" class="logout-button">Logout</a>
+                    `;
+                } else if (data.role === 'clinician') {
+                    navLinks.innerHTML = `
+                        <a href="clinical-dashboard.html" class="active">Dashboard</a>
+                        <a href="#" onclick="handleLogout()" class="logout-button">Logout</a>
+                    `;
+                }
+            } catch {
+                navLinks.innerHTML = '';
+            }
+        }
+        window.addEventListener('DOMContentLoaded', renderNavBar);
 
         const recommendations = [
             {

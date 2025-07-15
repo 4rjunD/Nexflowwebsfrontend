@@ -25,6 +25,16 @@
                 const data = await res.json();
                 if (!data.authenticated) {
                     window.location.href = 'index.html';
+                    return;
+                }
+                // Role check: if clinician, redirect
+                const userRes = await fetch(`${API_BASE_URL}/api/user`, { credentials: 'include' });
+                if (userRes.ok) {
+                    const userData = await userRes.json();
+                    if (userData.role === 'clinician') {
+                        window.location.href = 'clinical-dashboard.html';
+                        return;
+                    }
                 }
                 // else: stay on this page
             } catch {
@@ -480,13 +490,8 @@
     </style>
 </head>
 <body>
-    <nav class="nav-bar">
-        <div class="nav-links">
-            <a href="irscore.html" class="active">IRScore Calculator</a>
-            <a href="trajectory.html" onclick="return checkData('trajectory.html')">Trajectory Panel</a>
-            <a href="recommendations.html" onclick="return checkData('recommendations.html')">Recommendations</a>
-            <a href="#" onclick="handleLogout()" class="logout-button">Logout</a>
-        </div>
+    <nav class="nav-bar" id="main-nav">
+        <div class="nav-links" id="nav-links"></div>
     </nav>
 
 
@@ -898,6 +903,84 @@
             document.getElementById('tos-modal').style.display = 'flex';
             // }
         });
+
+        // Check for pending clinician invite on page load
+        async function checkClinicianInvite() {
+            try {
+                const sessionRes = await fetch(`${API_BASE_URL}/api/session`, { credentials: 'include' });
+                if (!sessionRes.ok) return;
+                const sessionData = await sessionRes.json();
+                // Only check for patients
+                if (!sessionData.authenticated) return;
+                // Optionally, you could add a role check here if sessionData includes it
+                const res = await fetch(`${API_BASE_URL}/api/patient/invite-status`, { credentials: 'include' });
+                if (!res.ok) return;
+                const data = await res.json();
+                if (data.pending) {
+                    showPopup(
+                        'Clinician Invitation',
+                        `You have been invited by <b>${data.clinician_name}</b> (${data.clinician_email}) to join their clinic. Do you accept?`,
+                        'info',
+                        [
+                            { text: 'Accept', onclick: () => respondToInvite('accept') },
+                            { text: 'Reject', onclick: () => respondToInvite('reject') }
+                        ]
+                    );
+                }
+            } catch (e) {
+                // Ignore errors
+            }
+        }
+
+        async function respondToInvite(action) {
+            try {
+                const res = await fetch(`${API_BASE_URL}/api/patient/respond-invite`, {
+                    method: 'POST',
+                    credentials: 'include',
+                    headers: { 'Content-Type': 'application/json', 'X-CSRF-Token': getCSRFToken() },
+                    body: JSON.stringify({ action })
+                });
+                const data = await res.json();
+                closePopup();
+                if (res.ok) {
+                    showAlert(action === 'accept' ? 'You have joined your clinician.' : 'You have rejected the invitation.', 'success');
+                } else {
+                    showAlert(data.message || 'Error processing invite.', 'error');
+                }
+            } catch (e) {
+                showAlert('Network error. Please try again.', 'error');
+            }
+        }
+
+        // Call on page load
+        window.addEventListener('DOMContentLoaded', () => {
+            fetchAndDisplayIRScore();
+            checkClinicianInvite();
+        });
+
+        async function renderNavBar() {
+            const navLinks = document.getElementById('nav-links');
+            try {
+                const res = await fetch(`${API_BASE_URL}/api/user`, { credentials: 'include' });
+                if (!res.ok) throw new Error('Not authenticated');
+                const data = await res.json();
+                if (data.role === 'patient') {
+                    navLinks.innerHTML = `
+                        <a href="irscore.html" class="active">IRScore Calculator</a>
+                        <a href="recommendations.html">Recommendations</a>
+                        <a href="#" onclick="handleLogout()" class="logout-button">Logout</a>
+                    `;
+                } else if (data.role === 'clinician') {
+                    navLinks.innerHTML = `
+                        <a href="clinical-dashboard.html" class="active">Dashboard</a>
+                        <a href="#" onclick="handleLogout()" class="logout-button">Logout</a>
+                    `;
+                }
+            } catch {
+                navLinks.innerHTML = '';
+            }
+        }
+        window.addEventListener('DOMContentLoaded', renderNavBar);
     </script>
 </body>
 </html>

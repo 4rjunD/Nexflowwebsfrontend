@@ -279,6 +279,13 @@
         </div>
         <form id="login-form" onsubmit="handleLogin(event)">
             <div class="form-group">
+                <label for="role">Login as:</label>
+                <div style="display: flex; gap: 1rem; margin-bottom: 1rem;">
+                    <label><input type="radio" name="role" value="patient" checked> Patient</label>
+                    <label><input type="radio" name="role" value="clinician"> Clinician</label>
+                </div>
+            </div>
+            <div class="form-group">
                 <label for="email">Email</label>
                 <input type="email" id="email" name="email" required placeholder="Enter your email">
                 <div class="error-message" id="email-error"></div>
@@ -385,6 +392,16 @@
                 if (!res.ok) throw new Error('Not authenticated');
                 const data = await res.json();
                 if (data.authenticated) {
+                    // Fetch user role
+                    const userRes = await fetch(`${API_BASE_URL}/api/user`, { credentials: 'include' });
+                    if (userRes.ok) {
+                        const userData = await userRes.json();
+                        if (userData.role === 'clinician') {
+                            window.location.href = 'clinical-dashboard.html';
+                            return;
+                        }
+                    }
+                    // Default: patient
                     window.location.href = 'irscore.html';
                 }
             } catch {
@@ -410,6 +427,7 @@
         async function handleLogin(event) {
             event.preventDefault();
             try {
+                const role = document.querySelector('input[name="role"]:checked').value;
                 const email = document.getElementById('email').value;
                 const password = document.getElementById('password').value;
                 const errorElement = document.getElementById('email-error');
@@ -425,13 +443,22 @@
                         'X-CSRF-Token': csrfToken
                     },
                     credentials: 'include',
-                    body: JSON.stringify({ email, password })
+                    body: JSON.stringify({ email, password, role })
                 });
 
                 const data = await response.json();
 
                 if (response.ok) {
-                    // Session cookie set by backend
+                    // Fetch user role
+                    const userRes = await fetch(`${API_BASE_URL}/api/user`, { credentials: 'include' });
+                    if (userRes.ok) {
+                        const userData = await userRes.json();
+                        if (userData.role === 'clinician') {
+                            window.location.href = 'clinical-dashboard.html';
+                            return;
+                        }
+                    }
+                    // Default: patient
                     window.location.href = 'irscore.html';
                 } else {
                     errorElement.textContent = data.message || 'Invalid email or password';

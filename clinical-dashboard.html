@@ -1,0 +1,368 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Clinician Dashboard - NexFlow</title>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="styles.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        body {
+            background: var(--gradient);
+            min-height: 100vh;
+            margin: 0;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 2rem;
+        }
+        .dashboard-container {
+            background: var(--card-background);
+            border-radius: 20px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+            padding: 2rem;
+            max-width: 1200px;
+            width: 100%;
+            margin-top: 3rem;
+        }
+        .dashboard-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 2rem;
+        }
+        .dashboard-header h1 {
+            color: var(--primary-color);
+            font-size: 2.2rem;
+        }
+        .invite-section {
+            display: flex;
+            gap: 1rem;
+            align-items: center;
+        }
+        .invite-section input {
+            padding: 0.7rem;
+            border-radius: 8px;
+            border: 1.5px solid #E5E7EB;
+            font-size: 1rem;
+        }
+        .invite-section button {
+            background: var(--gradient);
+            color: white;
+            border: none;
+            padding: 0.7rem 1.5rem;
+            border-radius: 8px;
+            font-size: 1rem;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+        .invite-section button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        }
+        .search-filter-row {
+            display: flex;
+            gap: 1rem;
+            margin-bottom: 1.5rem;
+            flex-wrap: wrap;
+        }
+        .search-filter-row input, .search-filter-row select {
+            padding: 0.6rem;
+            border-radius: 8px;
+            border: 1.5px solid #E5E7EB;
+            font-size: 1rem;
+        }
+        .patient-list {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 2rem;
+        }
+        .patient-list th, .patient-list td {
+            padding: 0.8rem 1rem;
+            border-bottom: 1px solid #E5E7EB;
+            text-align: left;
+        }
+        .patient-list th {
+            color: var(--primary-color);
+            font-weight: 600;
+        }
+        .patient-list tr:hover {
+            background: #F3F4F6;
+            cursor: pointer;
+        }
+        .risk-badge {
+            padding: 0.3rem 0.8rem;
+            border-radius: 12px;
+            color: white;
+            font-weight: 500;
+            font-size: 0.95rem;
+        }
+        .risk-excellent { background: #4ADE80; }
+        .risk-good { background: #FCD34D; color: #333; }
+        .risk-moderate { background: #FB923C; }
+        .risk-high { background: #F87171; }
+        .risk-unknown { background: #9CA3AF; }
+        .histogram-section {
+            margin-bottom: 2rem;
+        }
+        .patient-detail-modal {
+            position: fixed;
+            top: 0; left: 0; width: 100vw; height: 100vh;
+            background: rgba(0,0,0,0.6);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 9999;
+        }
+        .patient-detail-content {
+            background: white;
+            border-radius: 16px;
+            padding: 2rem;
+            max-width: 600px;
+            width: 95vw;
+            box-shadow: 0 8px 32px rgba(0,0,0,0.25);
+            position: relative;
+        }
+        .close-btn {
+            position: absolute;
+            top: 1rem;
+            right: 1rem;
+            background: none;
+            border: none;
+            font-size: 1.5rem;
+            cursor: pointer;
+        }
+        .nav-bar {
+            background: var(--card-background);
+            padding: 1rem 2rem;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+            width: 100%;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            position: fixed;
+            top: 0;
+            left: 0;
+            z-index: 1000;
+        }
+        .nav-links a {
+            margin-right: 1.5rem;
+            color: var(--text-color);
+            text-decoration: none;
+            font-weight: 500;
+            font-size: 1rem;
+        }
+        .nav-links a.active {
+            color: var(--primary-color);
+            font-weight: 600;
+        }
+        .logout-button {
+            background: var(--danger-color);
+            color: white;
+            padding: 0.6rem 1rem;
+            border-radius: 8px;
+            font-weight: 500;
+            font-size: 1rem;
+            cursor: pointer;
+            transition: background 0.3s ease;
+        }
+        .logout-button:hover {
+            background: var(--danger-hover);
+        }
+        @media (max-width: 768px) {
+            .dashboard-container { padding: 1rem; }
+            .dashboard-header { flex-direction: column; gap: 1rem; }
+            .invite-section { flex-direction: column; align-items: stretch; }
+            .search-filter-row { flex-direction: column; gap: 0.5rem; }
+            .nav-bar { flex-direction: column; align-items: flex-start; padding: 0.5rem 1rem; }
+            .nav-links { margin-top: 0.5rem; }
+            .nav-links a { margin-right: 0; margin-bottom: 0.5rem; }
+        }
+    </style>
+</head>
+<body>
+    <nav class="nav-bar" id="main-nav">
+        <div class="nav-links" id="nav-links"></div>
+    </nav>
+    <div class="dashboard-container">
+        <div class="dashboard-header">
+            <h1>Clinician Dashboard</h1>
+            <div class="invite-section">
+                <input type="email" id="invite-email" placeholder="Invite patient by email">
+                <button onclick="invitePatient()">Send Invite</button>
+            </div>
+        </div>
+        <div class="histogram-section">
+            <canvas id="histogramChart" height="80"></canvas>
+        </div>
+        <div class="search-filter-row">
+            <input type="text" id="search-input" placeholder="Search by name or IRScore" oninput="fetchPatients()">
+            <select id="risk-filter" onchange="fetchPatients()">
+                <option value="">All Risk Levels</option>
+                <option value="excellent">Excellent</option>
+                <option value="good">Good</option>
+                <option value="moderate">Moderate</option>
+                <option value="high">High</option>
+            </select>
+        </div>
+        <table class="patient-list" id="patient-table">
+            <thead>
+                <tr>
+                    <th>Name</th>
+                    <th>Email</th>
+                    <th>IRScore</th>
+                    <th>Risk Level</th>
+                </tr>
+            </thead>
+            <tbody id="patient-tbody">
+                <!-- Patients will be rendered here -->
+            </tbody>
+        </table>
+    </div>
+    <div id="patient-detail-modal" class="patient-detail-modal" style="display:none;">
+        <div class="patient-detail-content">
+            <button class="close-btn" onclick="closePatientDetail()">&times;</button>
+            <div id="patient-detail-content"></div>
+        </div>
+    </div>
+    <script>
+        const API_BASE_URL = 'https://api.nexflowai.app/';
+        let histogramChart = null;
+
+        async function fetchHistogram() {
+            const res = await fetch(`${API_BASE_URL}/api/clinician/irscore-distribution`, { credentials: 'include' });
+            if (!res.ok) return;
+            const data = await res.json();
+            const ctx = document.getElementById('histogramChart').getContext('2d');
+            const labels = ['Excellent', 'Good', 'Moderate', 'High', 'Unknown'];
+            const colors = ['#4ADE80', '#FCD34D', '#FB923C', '#F87171', '#9CA3AF'];
+            const values = [data.excellent, data.good, data.moderate, data.high, data.unknown];
+            if (histogramChart) histogramChart.destroy();
+            histogramChart = new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels,
+                    datasets: [{
+                        label: 'Patient Count',
+                        data: values,
+                        backgroundColor: colors
+                    }]
+                },
+                options: {
+                    plugins: { legend: { display: false } },
+                    scales: { y: { beginAtZero: true, stepSize: 1 } }
+                }
+            });
+        }
+
+        async function fetchPatients() {
+            const search = document.getElementById('search-input').value;
+            const risk = document.getElementById('risk-filter').value;
+            let url = `${API_BASE_URL}/api/clinician/patients?`;
+            if (search) url += `search=${encodeURIComponent(search)}&`;
+            if (risk) url += `risk=${encodeURIComponent(risk)}&`;
+            const res = await fetch(url, { credentials: 'include' });
+            if (!res.ok) return;
+            const data = await res.json();
+            const tbody = document.getElementById('patient-tbody');
+            tbody.innerHTML = '';
+            data.forEach(patient => {
+                const tr = document.createElement('tr');
+                tr.onclick = () => showPatientDetail(patient.id);
+                tr.innerHTML = `
+                    <td>${patient.name}</td>
+                    <td>${patient.email}</td>
+                    <td>${patient.irscore !== null && patient.irscore !== undefined ? Math.round(patient.irscore) : '--'}</td>
+                    <td><span class="risk-badge risk-${patient.risk_level}">${patient.risk_level.charAt(0).toUpperCase() + patient.risk_level.slice(1)}</span></td>
+                `;
+                tbody.appendChild(tr);
+            });
+        }
+
+        async function invitePatient() {
+            const email = document.getElementById('invite-email').value.trim();
+            if (!email) {
+                alert('Please enter a patient email.');
+                return;
+            }
+            const res = await fetch(`${API_BASE_URL}/api/clinician/invite`, {
+                method: 'POST',
+                credentials: 'include',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ email })
+            });
+            const data = await res.json();
+            if (res.ok) {
+                alert('Invite sent successfully!');
+                document.getElementById('invite-email').value = '';
+            } else {
+                alert(data.message || 'Error sending invite.');
+            }
+        }
+
+        async function showPatientDetail(patientId) {
+            const res = await fetch(`${API_BASE_URL}/api/clinician/patient/${patientId}`, { credentials: 'include' });
+            if (!res.ok) {
+                alert('Error loading patient details.');
+                return;
+            }
+            const data = await res.json();
+            const container = document.getElementById('patient-detail-content');
+            let html = `<h2>${data.name}</h2><p>${data.email}</p>`;
+            if (data.irscore_history && data.irscore_history.length > 0) {
+                html += '<h3>IRScore History</h3><ul>';
+                data.irscore_history.forEach(item => {
+                    html += `<li><b>${Math.round(item.score)}</b> (${new Date(item.created_at).toLocaleString()})`;
+                    html += `<ul style='margin-left:1.2em;'>`;
+                    html += `<li>Age: ${item.age}</li>`;
+                    html += `<li>Gender: ${item.gender}</li>`;
+                    html += `<li>Weight: ${item.weight}</li>`;
+                    html += `<li>Height: ${item.height}</li>`;
+                    html += `<li>BMI: ${item.bmi}</li>`;
+                    html += `<li>Sleep: ${item.sleep}</li>`;
+                    html += `<li>Family History: ${item.family_history}</li>`;
+                    html += `<li>Activity: ${item.activity}</li>`;
+                    html += `</ul></li>`;
+                });
+                html += '</ul>';
+            } else {
+                html += '<p>No IRScore history available.</p>';
+            }
+            container.innerHTML = html;
+            document.getElementById('patient-detail-modal').style.display = 'flex';
+        }
+        function closePatientDetail() {
+            document.getElementById('patient-detail-modal').style.display = 'none';
+        }
+        // Role check: only allow clinicians
+        async function checkClinicianRole() {
+            try {
+                const res = await fetch(`${API_BASE_URL}/api/user`, { credentials: 'include' });
+                if (!res.ok) throw new Error('Not authenticated');
+                const data = await res.json();
+                if (!data.role || data.role !== 'clinician') {
+                    window.location.href = 'index.html';
+                }
+            } catch {
+                window.location.href = 'index.html';
+            }
+        }
+        checkClinicianRole();
+        async function renderNavBar() {
+            const navLinks = document.getElementById('nav-links');
+            navLinks.innerHTML = `
+                <a href="clinical-dashboard.html" class="active">Dashboard</a>
+                <a href="#" onclick="handleLogout()" class="logout-button">Logout</a>
+            `;
+        }
+        // Initial load
+        window.addEventListener('DOMContentLoaded', () => {
+            fetchHistogram();
+            fetchPatients();
+            renderNavBar();
+        });
+    </script>
+</body>
+</html> 
