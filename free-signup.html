@@ -451,7 +451,7 @@
         <form id="signup-form" onsubmit="handleSignup(event)">
             <div class="form-group" id="clinic-id-group" style="display:none;">
                 <label for="clinic-id">Clinic ID</label>
-                <input type="text" id="clinic-id" name="clinic-id" maxlength="6" pattern="\d{6}" placeholder="Enter 6-digit Clinic ID">
+                <input type="text" id="clinic-id" name="clinic-id" maxlength="6" pattern="\d{6}" inputmode="numeric" autocomplete="one-time-code" placeholder="Enter 6-digit Clinic ID">
                 <div class="error-message" id="clinic-id-error"></div>
             </div>
             <div class="form-group">
@@ -610,11 +610,14 @@
                     return;
                 }
                 if (selectedRole === 'clinician') {
-                    if (!clinicId || !/^\d{6}$/.test(clinicId)) {
+                    // Clean up input: trim and remove non-digits
+                    const cleanedClinicId = clinicId.trim().replace(/\D/g, '');
+                    if (!cleanedClinicId || cleanedClinicId.length !== 6) {
                         document.getElementById('clinic-id-error').textContent = 'Valid 6-digit Clinic ID required';
                         document.getElementById('clinic-id-error').style.display = 'block';
                         return;
                     }
+                    body.clinic_id = cleanedClinicId;
                 }
                 let body = { name, email, password, role: selectedRole };
                 if (selectedRole === 'clinician') {
