@@ -399,11 +399,29 @@
             cursor: pointer;
             opacity: 0;
             transform: translateY(20px);
-            transition: opacity 0.6s, transform 0.6s;
+            transition: opacity 0.6s, transform 0.6s, box-shadow 0.3s, scale 0.3s;
+            display: inline-block;
         }
         .role-btn.visible {
             opacity: 1;
             transform: translateY(0);
+        }
+        .role-btn:hover {
+            transform: scale(1.08);
+            box-shadow: 0 8px 24px rgba(139,92,246,0.18);
+        }
+        #role-options {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 2rem;
+        }
+        #role-selection-container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            min-height: 350px;
         }
         #signup-form-container {
             animation: fadeIn 0.7s;
@@ -703,6 +721,12 @@
             document.getElementById('signup-role-label').textContent = 'Sign up as ' + role.charAt(0).toUpperCase() + role.slice(1);
             document.getElementById('clinician-code-group').style.display = (role === 'clinician') ? 'block' : 'none';
         }
+
+        // On page load, always show role selection and hide signup form
+        document.addEventListener('DOMContentLoaded', () => {
+            document.getElementById('role-selection-container').style.display = 'block';
+            document.getElementById('signup-form-container').style.display = 'none';
+        });
     </script>
 </body>
 </html> 
