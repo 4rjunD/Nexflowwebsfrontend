@@ -56,11 +56,8 @@ class User(db.Model):
     name = db.Column(db.String(100), nullable=False)
     email = db.Column(db.String(120), unique=True, nullable=False)
     password = db.Column(db.String(200), nullable=False)
-    is_pro = db.Column(db.Boolean, default=False)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
-    # New fields for B2B
     role = db.Column(db.String(20), nullable=False, default='patient')  # 'patient' or 'clinician'
-    clinician_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=True)  # For patients: their clinician
     pending_clinician_invite = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=True)  # For patients: pending invite from clinician
     clinic_id = db.Column(db.String(6), db.ForeignKey('clinic.clinic_id'), nullable=True)  # Clinic affiliation
 
@@ -79,12 +76,26 @@ class IRScore(db.Model):
     score = db.Column(db.Float)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
 
-# New model for clinician codes
-class ClinicianCode(db.Model):
+# New Patient and Clinician models
+class Patient(db.Model):
     id = db.Column(db.Integer, primary_key=True)
-    code = db.Column(db.String(6), unique=True, nullable=False)
-    used = db.Column(db.Boolean, default=False)
-    used_by = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=True)
+    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), unique=True, nullable=False)
+    hash_id = db.Column(db.String(64), unique=True, nullable=False)
+    name = db.Column(db.String(100), nullable=False)
+    email = db.Column(db.String(120), unique=True, nullable=False)
+    password = db.Column(db.String(200), nullable=False)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    clinic_id = db.Column(db.String(6), db.ForeignKey('clinic.clinic_id'), nullable=True)
+    pending_clinician_invite = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=True)
+
+class Clinician(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), unique=True, nullable=False)
+    name = db.Column(db.String(100), nullable=False)
+    email = db.Column(db.String(120), unique=True, nullable=False)
+    password = db.Column(db.String(200), nullable=False)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    clinic_id = db.Column(db.String(6), db.ForeignKey('clinic.clinic_id'), nullable=True)
 
 # Token required decorator
 def token_required(f):
@@ -240,6 +251,27 @@ def signup():
         clinic_id=clinic_id
     )
     db.session.add(new_user)
+    db.session.flush()  # get new_user.id
+    if role == 'patient':
+        db.session.add(Patient(
+            user_id=new_user.id,
+            hash_id=new_user.hash_id,
+            name=new_user.name,
+            email=new_user.email,
+            password=new_user.password,
+            created_at=new_user.created_at,
+            clinic_id=new_user.clinic_id,
+            pending_clinician_invite=new_user.pending_clinician_invite
+        ))
+    elif role == 'clinician':
+        db.session.add(Clinician(
+            user_id=new_user.id,
+            name=new_user.name,
+            email=new_user.email,
+            password=new_user.password,
+            created_at=new_user.created_at,
+            clinic_id=new_user.clinic_id
+        ))
     db.session.commit()
     token = jwt.encode({
         'user_id': new_user.hash_id,
@@ -322,7 +354,6 @@ def session_status():
 
     resp = {
         "authenticated": False,
-        "plan": None,
         "csrf_token": csrf_token
     }
 
@@ -333,9 +364,7 @@ def session_status():
         user = User.query.filter_by(hash_id=data['user_id']).first()
         if not user:
             raise Exception("Invalid user")
-        plan = "pro" if user.is_pro else "free"
         resp["authenticated"] = True
-        resp["plan"] = plan
     except Exception:
         pass
 
@@ -361,7 +390,8 @@ def get_user(current_user):
         'id': current_user.hash_id,
         'name': current_user.name,
         'email': current_user.email,
-        'is_pro': current_user.is_pro
+        'role': current_user.role,
+        'clinic_id': current_user.clinic_id
     })
 
 
@@ -371,7 +401,7 @@ def get_user(current_user):
 def upgrade_to_pro(current_user):
     # Here you would typically integrate with a payment processor
     # For now, we'll just mark the user as pro
-    current_user.is_pro = True
+    # current_user.is_pro = True # This line is removed as per the edit hint
     db.session.commit()
     
     return jsonify({'message': 'Upgraded to pro successfully'})
@@ -509,8 +539,8 @@ def clinician_invite(current_user):
     patient = User.query.filter_by(email=patient_email, role='patient').first()
     if not patient:
         return jsonify({'message': 'No patient found with that email'}), 404
-    if patient.clinician_id == current_user.id:
-        return jsonify({'message': 'Patient is already linked to you'}), 400
+    if patient.clinic_id == current_user.clinic_id and patient.clinic_id is not None:
+        return jsonify({'message': 'Patient is already linked to your clinic'}), 400
     if patient.pending_clinician_invite == current_user.id:
         return jsonify({'message': 'Invite already pending for this patient'}), 400
     patient.pending_clinician_invite = current_user.id
@@ -541,7 +571,6 @@ def patient_respond_invite(current_user):
         clinician = User.query.get(current_user.pending_clinician_invite)
         if clinician and clinician.clinic_id:
             current_user.clinic_id = clinician.clinic_id
-        current_user.clinician_id = current_user.pending_clinician_invite
         current_user.pending_clinician_invite = None
         db.session.commit()
         return jsonify({'message': 'Invite accepted'})
@@ -561,7 +590,7 @@ def clinician_patients(current_user):
     search = request.args.get('search', '').strip().lower()
     risk = request.args.get('risk')  # 'excellent', 'good', 'moderate', 'high'
     # Get all patients linked to this clinician
-    patients = User.query.filter_by(clinician_id=current_user.id, role='patient').all()
+    patients = User.query.filter_by(clinic_id=current_user.clinic_id, role='patient').all()
     # Get latest IRScore for each patient
     result = []
     for patient in patients:
@@ -599,7 +628,7 @@ def clinician_patients(current_user):
 def clinician_patient_detail(current_user, patient_id):
     if current_user.role != 'clinician':
         return jsonify({'message': 'Only clinicians can access this'}), 403
-    patient = User.query.filter_by(hash_id=patient_id, role='patient', clinician_id=current_user.id).first()
+    patient = User.query.filter_by(hash_id=patient_id, role='patient', clinic_id=current_user.clinic_id).first()
     if not patient:
         return jsonify({'message': 'Patient not found or not linked to you'}), 404
     irscores = IRScore.query.filter_by(hash_id=patient.hash_id).order_by(IRScore.created_at.desc()).all()
@@ -631,7 +660,7 @@ def clinician_irscore_distribution(current_user):
     if current_user.role != 'clinician':
         return jsonify({'message': 'Only clinicians can access this'}), 403
     # Get all patients linked to this clinician
-    patients = User.query.filter_by(clinician_id=current_user.id, role='patient').all()
+    patients = User.query.filter_by(clinic_id=current_user.clinic_id, role='patient').all()
     # Get latest IRScore for each patient
     bins = {
         'excellent': 0,
@@ -664,16 +693,6 @@ def options_handler(path):
 # Create database tables and seed clinician codes and clinics
 with app.app_context():
     db.create_all()
-    # Seed clinician codes if not present
-    if ClinicianCode.query.count() == 0:
-        import random
-        codes = set()
-        while len(codes) < 50:
-            code = f"{random.randint(0, 999999):06d}"
-            codes.add(code)
-        for code in codes:
-            db.session.add(ClinicianCode(code=code))
-        db.session.commit()
     # Seed clinics if not present
     if Clinic.query.count() == 0:
         import random

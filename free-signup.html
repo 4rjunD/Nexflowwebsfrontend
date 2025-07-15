@@ -609,6 +609,7 @@
                     document.getElementById('confirm-password-error').style.display = 'block';
                     return;
                 }
+                let body = { name, email, password, role: selectedRole };
                 if (selectedRole === 'clinician') {
                     // Clean up input: trim and remove non-digits
                     const cleanedClinicId = clinicId.trim().replace(/\D/g, '');
@@ -618,10 +619,6 @@
                         return;
                     }
                     body.clinic_id = cleanedClinicId;
-                }
-                let body = { name, email, password, role: selectedRole };
-                if (selectedRole === 'clinician') {
-                    body.clinic_id = clinicId;
                 }
                 const response = await fetch(`${API_BASE_URL}/api/signup`, {
                     method: 'POST',
