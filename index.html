@@ -269,22 +269,51 @@
                 font-size: 2rem;
             }
         }
+        .role-btn {
+            font-size: 1.3rem;
+            padding: 1.2rem 2.5rem;
+            border-radius: 16px;
+            border: none;
+            margin: 0 1.5rem;
+            background: var(--gradient);
+            color: white;
+            font-weight: 600;
+            box-shadow: 0 4px 16px rgba(139,92,246,0.10);
+            cursor: pointer;
+            opacity: 0;
+            transform: translateY(20px);
+            transition: opacity 0.6s, transform 0.6s;
+        }
+        .role-btn.visible {
+            opacity: 1;
+            transform: translateY(0);
+        }
+        #login-form-container {
+            animation: fadeIn 0.7s;
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(30px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
     </style>
 </head>
 <body>
-    <div class="login-container">
+    <div class="login-container" id="role-selection-container">
         <div class="logo">
             <h1>NexFlow</h1>
-            <p>Welcome Back</p>
+            <p id="typing-text" style="font-size:1.3rem; color:#6B7280; min-height:2.5rem;"></p>
+        </div>
+        <div id="role-options" style="display:none; margin-top:2rem;">
+            <button class="role-btn" id="patient-btn">Patient</button>
+            <button class="role-btn" id="clinician-btn">Clinician</button>
+        </div>
+    </div>
+    <div class="login-container" id="login-form-container" style="display:none;">
+        <div class="logo">
+            <h1>NexFlow</h1>
+            <p id="login-role-label">Welcome Back</p>
         </div>
         <form id="login-form" onsubmit="handleLogin(event)">
-            <div class="form-group">
-                <label for="role">Login as:</label>
-                <div style="display: flex; gap: 1rem; margin-bottom: 1rem;">
-                    <label><input type="radio" name="role" value="patient" checked> Patient</label>
-                    <label><input type="radio" name="role" value="clinician"> Clinician</label>
-                </div>
-            </div>
             <div class="form-group">
                 <label for="email">Email</label>
                 <input type="email" id="email" name="email" required placeholder="Enter your email">
@@ -298,10 +327,6 @@
             <button type="submit" class="login-button">Log In</button>
             <div class="signup-link">Don't have an account? <a href="free-signup.html">Sign up for free</a></div>
         </form>
-
-        <div class="signup-link">
-            <p>Ready to unlock full access? <a href="pricing.html">View Pro Plans</a></p>
-        </div>
     </div>
 
     <!-- Signup Form (Hidden by default) -->
@@ -427,15 +452,10 @@
         async function handleLogin(event) {
             event.preventDefault();
             try {
-                const role = document.querySelector('input[name="role"]:checked').value;
                 const email = document.getElementById('email').value;
                 const password = document.getElementById('password').value;
                 const errorElement = document.getElementById('email-error');
                 await initCSRF();
-                // const csrfToken = getCSRFToken();
-                // console.log('CSRF Token being sent:', csrfToken);
-                // console.log("CSRF Token (cookie):", document.cookie);
-
                 const response = await fetch(`${API_BASE_URL}/api/login`, {
                     method: 'POST',
                     headers: {
@@ -443,13 +463,10 @@
                         'X-CSRF-Token': csrfToken
                     },
                     credentials: 'include',
-                    body: JSON.stringify({ email, password, role })
+                    body: JSON.stringify({ email, password, role: selectedRole })
                 });
-
                 const data = await response.json();
-
                 if (response.ok) {
-                    // Fetch user role
                     const userRes = await fetch(`${API_BASE_URL}/api/user`, { credentials: 'include' });
                     if (userRes.ok) {
                         const userData = await userRes.json();
@@ -458,7 +475,6 @@
                             return;
                         }
                     }
-                    // Default: patient
                     window.location.href = 'irscore.html';
                 } else {
                     errorElement.textContent = data.message || 'Invalid email or password';
@@ -569,6 +585,37 @@
             showPopup('Notice', message, type);
         }
 
+        // Typing animation for 'Are you a...?'
+        const typingText = "Are you a...?";
+        let typingIndex = 0;
+        function typeText() {
+            if (typingIndex <= typingText.length) {
+                document.getElementById('typing-text').textContent = typingText.slice(0, typingIndex);
+                typingIndex++;
+                setTimeout(typeText, 60);
+            } else {
+                // Fade in role options
+                const options = document.getElementById('role-options');
+                options.style.display = 'flex';
+                setTimeout(() => {
+                    document.getElementById('patient-btn').classList.add('visible');
+                    setTimeout(() => document.getElementById('clinician-btn').classList.add('visible'), 200);
+                }, 100);
+            }
+        }
+        window.addEventListener('DOMContentLoaded', typeText);
+        // Role selection logic
+        let selectedRole = 'patient';
+        document.addEventListener('DOMContentLoaded', () => {
+            document.getElementById('patient-btn').onclick = () => showLoginForm('patient');
+            document.getElementById('clinician-btn').onclick = () => showLoginForm('clinician');
+        });
+        function showLoginForm(role) {
+            selectedRole = role;
+            document.getElementById('role-selection-container').style.display = 'none';
+            document.getElementById('login-form-container').style.display = 'block';
+            document.getElementById('login-role-label').textContent = role.charAt(0).toUpperCase() + role.slice(1) + ' Login';
+        }
     </script>
 </body>
 </html> 

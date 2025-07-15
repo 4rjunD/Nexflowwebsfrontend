@@ -386,30 +386,51 @@
                 font-size: 2rem;
             }
         }
+        .role-btn {
+            font-size: 1.3rem;
+            padding: 1.2rem 2.5rem;
+            border-radius: 16px;
+            border: none;
+            margin: 0 1.5rem;
+            background: var(--gradient);
+            color: white;
+            font-weight: 600;
+            box-shadow: 0 4px 16px rgba(139,92,246,0.10);
+            cursor: pointer;
+            opacity: 0;
+            transform: translateY(20px);
+            transition: opacity 0.6s, transform 0.6s;
+        }
+        .role-btn.visible {
+            opacity: 1;
+            transform: translateY(0);
+        }
+        #signup-form-container {
+            animation: fadeIn 0.7s;
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(30px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
     </style>
 </head>
 <body>
-    <div class="signup-container">
+    <div class="signup-container" id="role-selection-container">
         <div class="logo">
             <h1>NexFlow</h1>
-            <p>Create Your Free Account</p>
+            <p id="typing-text" style="font-size:1.3rem; color:#6B7280; min-height:2.5rem;"></p>
         </div>
-        <div class="plan-info">
-            <h3>Free Plan Includes:</h3>
-            <ul>
-                <li>Basic IRScore Calculator</li>
-                <li>One score calculation per month</li>
-                <li>Basic score interpretation</li>
-            </ul>
+        <div id="role-options" style="display:none; margin-top:2rem;">
+            <button class="role-btn" id="patient-btn">Patient</button>
+            <button class="role-btn" id="clinician-btn">Clinician</button>
+        </div>
+    </div>
+    <div class="signup-container" id="signup-form-container" style="display:none;">
+        <div class="logo">
+            <h1>NexFlow</h1>
+            <p id="signup-role-label">Create Your Account</p>
         </div>
         <form id="signup-form" onsubmit="handleSignup(event)">
-            <div class="form-group">
-                <label for="role">Sign up as:</label>
-                <div style="display: flex; gap: 1rem; margin-bottom: 1rem;">
-                    <label><input type="radio" name="role" value="patient" checked onchange="toggleClinicianCode()"> Patient</label>
-                    <label><input type="radio" name="role" value="clinician" onchange="toggleClinicianCode()"> Clinician</label>
-                </div>
-            </div>
             <div class="form-group">
                 <label for="name">Full Name</label>
                 <input type="text" id="name" name="name" required placeholder="Enter your full name">
@@ -441,28 +462,6 @@
             <button type="submit" class="signup-button">Create Free Account</button>
             <div class="login-link">Already have an account? <a href="index.html">Log in</a></div>
         </form>
-        <div class="upgrade-link">
-            <p>Upgrade to Pro for Unlimited Access</p>
-            <div class="pricing-grid">
-                <div class="pricing-card">
-                    <h4>Pro Plan</h4>
-                    <div class="price">$5.99/month</div>
-                    <ul>
-                        <li>Unlimited IRScore calculations</li>
-                        <li>Personalized recommendations</li>
-                        <li>Advanced trajectory analysis</li>
-                        <li>Comprehensive health tracking</li>
-                        <li>Historical data access</li>
-                        <li>Detailed insights and trends</li>
-                        <li>Progress monitoring</li>
-                        <li>Priority support</li>
-                    </ul>
-                    <!-- Temporarily disabled pro signup
-                    <button onclick="window.location.href='signup.html'" class="upgrade-button">Upgrade Now</button>
-                    -->
-                </div>
-            </div>
-        </div>
     </div>
 
     <!-- Terms of Service Modal (copied from irscore.html) -->
@@ -568,27 +567,20 @@
             event.preventDefault();
             try {
                 await initCSRF(); // make sure cookie is set
-
-                const role = document.querySelector('input[name="role"]:checked').value;
                 const name = document.getElementById('name').value;
                 const email = document.getElementById('email').value;
                 const password = document.getElementById('password').value;
                 const confirmPassword = document.getElementById('confirm-password').value;
                 const errorElement = document.getElementById('email-error');
                 const clinicianCode = document.getElementById('clinician-code').value;
-
                 document.getElementById('clinician-code-error').style.display = 'none';
-
                 if (password !== confirmPassword) {
                     document.getElementById('confirm-password-error').textContent = 'Passwords do not match';
                     document.getElementById('confirm-password-error').style.display = 'block';
                     return;
                 }
-
-                // const csrfToken = getCSRFToken();
-
-                let body = { name, email, password, plan: "free", role };
-                if (role === 'clinician') {
+                let body = { name, email, password, role: selectedRole };
+                if (selectedRole === 'clinician') {
                     if (!clinicianCode || !/^\d{6}$/.test(clinicianCode)) {
                         document.getElementById('clinician-code-error').textContent = 'Valid 6-digit code required';
                         document.getElementById('clinician-code-error').style.display = 'block';
@@ -596,7 +588,6 @@
                     }
                     body.clinician_code = clinicianCode;
                 }
-
                 const response = await fetch(`${API_BASE_URL}/api/signup`, {
                     method: 'POST',
                     headers: {
@@ -606,7 +597,6 @@
                     credentials: 'include',
                     body: JSON.stringify(body)
                 });
-
                 const data = await response.json();
                 if (response.ok) {
                     window.location.href = "irscore.html";
@@ -700,8 +690,17 @@
             showPopup('Notice', message, type);
         }
 
-        function toggleClinicianCode() {
-            const role = document.querySelector('input[name="role"]:checked').value;
+        // Role selection logic
+        let selectedRole = 'patient';
+        document.addEventListener('DOMContentLoaded', () => {
+            document.getElementById('patient-btn').onclick = () => showSignupForm('patient');
+            document.getElementById('clinician-btn').onclick = () => showSignupForm('clinician');
+        });
+        function showSignupForm(role) {
+            selectedRole = role;
+            document.getElementById('role-selection-container').style.display = 'none';
+            document.getElementById('signup-form-container').style.display = 'block';
+            document.getElementById('signup-role-label').textContent = 'Sign up as ' + role.charAt(0).toUpperCase() + role.slice(1);
             document.getElementById('clinician-code-group').style.display = (role === 'clinician') ? 'block' : 'none';
         }
     </script>
