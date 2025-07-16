@@ -919,7 +919,7 @@
                 if (data.pending) {
                     showPopup(
                         'Clinician Invitation',
-                        `You have been invited by <b>${data.clinician_name}</b> (${data.clinician_email}) to join their clinic. Do you accept?`,
+                        `You have been invited by <span style="font-weight:bold;">${data.clinician_name}</span> (${data.clinician_email}) to join their clinic. Do you accept?`,
                         'info',
                         [
                             { text: 'Accept', onclick: () => respondToInvite('accept') },
@@ -934,10 +934,11 @@
 
         async function respondToInvite(action) {
             try {
+                const token = await initCSRF();
                 const res = await fetch(`${API_BASE_URL}/api/patient/respond-invite`, {
                     method: 'POST',
                     credentials: 'include',
-                    headers: { 'Content-Type': 'application/json', 'X-CSRF-Token': getCSRFToken() },
+                    headers: { 'Content-Type': 'application/json', 'X-CSRF-Token': token },
                     body: JSON.stringify({ action })
                 });
                 const data = await res.json();

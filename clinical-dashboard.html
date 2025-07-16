@@ -201,10 +201,10 @@
             <input type="text" id="search-input" placeholder="Search by name or IRScore" oninput="fetchPatients()">
             <select id="risk-filter" onchange="fetchPatients()">
                 <option value="">All Risk Levels</option>
-                <option value="excellent">Excellent</option>
-                <option value="good">Good</option>
+                <option value="excellent">Optimal</option>
+                <option value="good">Normal</option>
                 <option value="moderate">Moderate</option>
-                <option value="high">High</option>
+                <option value="high">Severe</option>
             </select>
         </div>
         <table class="patient-list" id="patient-table">
@@ -248,7 +248,7 @@
             if (!res.ok) return;
             const data = await res.json();
             const ctx = document.getElementById('histogramChart').getContext('2d');
-            const labels = ['Excellent', 'Good', 'Moderate', 'High', 'Unknown'];
+            const labels = ['Optimal', 'Normal', 'Moderate', 'Severe', 'Unknown'];
             const colors = ['#4ADE80', '#FCD34D', '#FB923C', '#F87171', '#9CA3AF'];
             const values = [data.excellent, data.good, data.moderate, data.high, data.unknown];
             if (histogramChart) histogramChart.destroy();
@@ -287,7 +287,7 @@
                     <td>${patient.name}</td>
                     <td>${patient.email}</td>
                     <td>${patient.irscore !== null && patient.irscore !== undefined ? Math.round(patient.irscore) : '--'}</td>
-                    <td><span class="risk-badge risk-${patient.risk_level}">${patient.risk_level.charAt(0).toUpperCase() + patient.risk_level.slice(1)}</span></td>
+                    <td><span class="risk-badge risk-${patient.risk_level}">${riskLabel(patient.risk_level)}</span></td>
                 `;
                 tbody.appendChild(tr);
             });
@@ -439,6 +439,17 @@
         // Replace alert with popup
         function showAlert(message, type = 'info') {
             showPopup('Notice', message, type);
+        }
+
+        // Add this helper function for risk label mapping
+        function riskLabel(level) {
+            switch(level) {
+                case 'excellent': return 'Optimal';
+                case 'good': return 'Normal';
+                case 'moderate': return 'Moderate';
+                case 'high': return 'Severe';
+                default: return level.charAt(0).toUpperCase() + level.slice(1);
+            }
         }
 
         // Wire up logout button
