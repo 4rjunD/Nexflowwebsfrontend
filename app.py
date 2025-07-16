@@ -685,6 +685,19 @@ def clinician_irscore_distribution(current_user):
             bins['unknown'] += 1
     return jsonify(bins)
 
+@app.route('/api/admin/fix-patient-clinic-ids', methods=['POST'])
+def fix_patient_clinic_ids():
+    # WARNING: This endpoint should be protected or removed after use!
+    updated = 0
+    patients = User.query.filter_by(role='patient').all()
+    for user in patients:
+        patient = Patient.query.filter_by(user_id=user.id).first()
+        if patient and user.clinic_id and not patient.clinic_id:
+            patient.clinic_id = user.clinic_id
+            updated += 1
+    db.session.commit()
+    return jsonify({'updated': updated, 'message': 'Patient clinic_ids updated from User table.'})
+
 @app.route('/api/<path:path>', methods=['OPTIONS'])
 def options_handler(path):
     return '', 204

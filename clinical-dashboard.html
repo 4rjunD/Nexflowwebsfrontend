@@ -135,50 +135,82 @@
             cursor: pointer;
         }
         .nav-bar {
-            background: var(--card-background);
-            padding: 1rem 2rem;
-            box-shadow: 0 4px 10px rgba(0,0,0,0.1);
-            width: 100%;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
             position: fixed;
             top: 0;
             left: 0;
+            right: 0;
+            background: rgba(0, 0, 0, 0.2);
+            padding: 1rem;
+            display: flex;
+            justify-content: center;
+            align-items: center;
             z-index: 1000;
         }
-        .nav-links a {
-            margin-right: 1.5rem;
-            color: var(--text-color);
-            text-decoration: none;
-            font-weight: 500;
-            font-size: 1rem;
+        .nav-links {
+            display: flex;
+            gap: 1rem;
+            position: relative;
         }
-        .nav-links a.active {
-            color: var(--primary-color);
-            font-weight: 600;
+        .nav-bar a {
+            color: white;
+            text-decoration: none;
+            padding: 0.8rem 1.5rem;
+            border-radius: 25px;
+            transition: all 0.3s ease;
+            font-weight: 500;
+        }
+        .nav-bar a:hover {
+            background: rgba(255, 255, 255, 0.2);
+            transform: translateY(-2px);
+        }
+        .nav-bar a.active {
+            background: var(--primary-color);
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
         }
         .logout-button {
-            background: var(--danger-color);
+            position: absolute;
+            right: -120px;
+            background: rgba(255, 255, 255, 0.1);
+            padding: 0.8rem 1.5rem;
+            border-radius: 25px;
             color: white;
-            padding: 0.6rem 1rem;
-            border-radius: 8px;
+            text-decoration: none;
+            transition: all 0.3s ease;
             font-weight: 500;
-            font-size: 1rem;
-            cursor: pointer;
-            transition: background 0.3s ease;
         }
         .logout-button:hover {
-            background: var(--danger-hover);
+            background: rgba(255, 255, 255, 0.2);
+            transform: translateY(-2px);
         }
         @media (max-width: 768px) {
             .dashboard-container { padding: 1rem; }
             .dashboard-header { flex-direction: column; gap: 1rem; }
             .invite-section { flex-direction: column; align-items: stretch; }
             .search-filter-row { flex-direction: column; gap: 0.5rem; }
-            .nav-bar { flex-direction: column; align-items: flex-start; padding: 0.5rem 1rem; }
-            .nav-links { margin-top: 0.5rem; }
-            .nav-links a { margin-right: 0; margin-bottom: 0.5rem; }
+            .nav-bar {
+                flex-direction: row;
+                gap: 0.3rem;
+                padding: 0.3rem;
+                background: rgba(0, 0, 0, 0.3);
+            }
+            .nav-links {
+                flex-direction: row;
+                align-items: center;
+                gap: 0.3rem;
+                flex-wrap: wrap;
+                justify-content: center;
+            }
+            .nav-bar a {
+                padding: 0.4rem 0.8rem;
+                font-size: 0.8rem;
+                border-radius: 15px;
+            }
+            .logout-button {
+                position: static;
+                margin-top: 0;
+                padding: 0.4rem 0.8rem;
+                font-size: 0.8rem;
+            }
         }
     </style>
 </head>
@@ -188,7 +220,7 @@
     </nav>
     <div class="dashboard-container">
         <div class="dashboard-header">
-            <h1>Clinician Dashboard</h1>
+            <h1>Dashboard</h1>
             <div class="invite-section">
                 <input type="email" id="invite-email" placeholder="Invite patient by email">
                 <button onclick="invitePatient()">Send Invite</button>
@@ -309,7 +341,7 @@
                 });
                 const data = await res.json();
                 if (res.ok) {
-                    showAlert('Invite sent successfully!', 'success');
+                    showPopup('Invite Sent', `An invitation was sent to <b>${email}</b>.`, 'success');
                     document.getElementById('invite-email').value = '';
                 } else {
                     showAlert(data.message || 'Error sending invite.', 'error');

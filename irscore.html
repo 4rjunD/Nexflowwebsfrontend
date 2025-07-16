@@ -867,7 +867,7 @@
             icon.className = `popup-icon ${type}`;
 
             titleEl.textContent = title;
-            messageEl.textContent = message;
+            messageEl.innerHTML = message; // Use innerHTML for rich text
 
             // Create buttons
             buttonsEl.innerHTML = '';
@@ -910,16 +910,19 @@
                 const sessionRes = await fetch(`${API_BASE_URL}/api/session`, { credentials: 'include' });
                 if (!sessionRes.ok) return;
                 const sessionData = await sessionRes.json();
-                // Only check for patients
                 if (!sessionData.authenticated) return;
-                // Optionally, you could add a role check here if sessionData includes it
                 const res = await fetch(`${API_BASE_URL}/api/patient/invite-status`, { credentials: 'include' });
                 if (!res.ok) return;
                 const data = await res.json();
                 if (data.pending) {
                     showPopup(
-                        'Clinician Invitation',
-                        `You have been invited by <span style="font-weight:bold;">${data.clinician_name}</span> (${data.clinician_email}) to join their clinic. Do you accept?`,
+                        'Clinic Invitation',
+                        `<div style="font-size:1.1rem;line-height:1.6;">
+                            <span style="font-weight:600; color:var(--primary-color);">${data.clinician_name}</span><br>
+                            <span style="color:#6B7280; font-size:0.98rem;">(${data.clinician_email})</span><br><br>
+                            has invited you to join their clinic.<br><br>
+                            <b>Would you like to accept this invitation?</b>
+                        </div>`,
                         'info',
                         [
                             { text: 'Accept', onclick: () => respondToInvite('accept') },
