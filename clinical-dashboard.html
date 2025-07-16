@@ -212,6 +212,88 @@
                 font-size: 0.8rem;
             }
         }
+        /* Modern Popup Modal Styles (copied from irscore.html) */
+        .popup-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.5);
+            display: none;
+            justify-content: center;
+            align-items: center;
+            z-index: 10000;
+            backdrop-filter: blur(5px);
+        }
+        .popup-modal {
+            background: white;
+            border-radius: 15px;
+            padding: 2rem;
+            max-width: 400px;
+            width: 90%;
+            text-align: center;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.3);
+            animation: popupSlideIn 0.3s ease-out;
+        }
+        @keyframes popupSlideIn {
+            from {
+                opacity: 0;
+                transform: translateY(-20px) scale(0.95);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0) scale(1);
+            }
+        }
+        .popup-title {
+            font-size: 1.5rem;
+            font-weight: 600;
+            color: #1F2937;
+            margin-bottom: 1rem;
+        }
+        .popup-message {
+            color: #6B7280;
+            line-height: 1.6;
+            margin-bottom: 1.5rem;
+        }
+        .popup-buttons {
+            display: flex;
+            gap: 1rem;
+            justify-content: center;
+        }
+        .popup-button {
+            padding: 0.75rem 1.5rem;
+            border: none;
+            border-radius: 8px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            min-width: 100px;
+        }
+        .popup-button.primary {
+            background: var(--primary-color);
+            color: white;
+        }
+        .popup-button.primary:hover {
+            background: #7C3AED;
+            transform: translateY(-1px);
+        }
+        .popup-button.secondary {
+            background: #E5E7EB;
+            color: #4B5563;
+        }
+        .popup-button.secondary:hover {
+            background: #D1D5DB;
+        }
+        .popup-icon {
+            font-size: 3rem;
+            margin-bottom: 1rem;
+        }
+        .popup-icon.success { color: #10B981; }
+        .popup-icon.error { color: #EF4444; }
+        .popup-icon.warning { color: #F59E0B; }
+        .popup-icon.info { color: #3B82F6; }
     </style>
 </head>
 <body>
@@ -259,16 +341,15 @@
             <div id="patient-detail-content"></div>
         </div>
     </div>
-    <div id="popup-overlay" class="popup-overlay" style="display:none;">
-        <div class="popup-content">
-            <div class="popup-header">
-                <span id="popup-icon"></span>
-                <h2 id="popup-title"></h2>
+    <!-- Modern Popup Modal -->
+    <div class="popup-overlay" id="popup-overlay" style="display:none;">
+        <div class="popup-modal">
+            <div class="popup-icon" id="popup-icon">⚠️</div>
+            <div class="popup-title" id="popup-title">Title</div>
+            <div class="popup-message" id="popup-message">Message</div>
+            <div class="popup-buttons" id="popup-buttons">
+                <button class="popup-button primary" onclick="closePopup()">OK</button>
             </div>
-            <div class="popup-body">
-                <p id="popup-message"></p>
-            </div>
-            <div class="popup-footer" id="popup-buttons"></div>
         </div>
     </div>
     <script>
