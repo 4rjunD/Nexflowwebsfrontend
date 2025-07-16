@@ -227,6 +227,18 @@
             <div id="patient-detail-content"></div>
         </div>
     </div>
+    <div id="popup-overlay" class="popup-overlay" style="display:none;">
+        <div class="popup-content">
+            <div class="popup-header">
+                <span id="popup-icon"></span>
+                <h2 id="popup-title"></h2>
+            </div>
+            <div class="popup-body">
+                <p id="popup-message"></p>
+            </div>
+            <div class="popup-footer" id="popup-buttons"></div>
+        </div>
+    </div>
     <script>
         const API_BASE_URL = 'https://api.nexflowai.app/';
         let histogramChart = null;
@@ -284,28 +296,33 @@
         async function invitePatient() {
             const email = document.getElementById('invite-email').value.trim();
             if (!email) {
-                alert('Please enter a patient email.');
+                showAlert('Please enter a patient email.', 'warning');
                 return;
             }
-            const res = await fetch(`${API_BASE_URL}/api/clinician/invite`, {
-                method: 'POST',
-                credentials: 'include',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ email })
-            });
-            const data = await res.json();
-            if (res.ok) {
-                alert('Invite sent successfully!');
-                document.getElementById('invite-email').value = '';
-            } else {
-                alert(data.message || 'Error sending invite.');
+            try {
+                const token = await initCSRF();
+                const res = await fetch(`${API_BASE_URL}/api/clinician/invite`, {
+                    method: 'POST',
+                    credentials: 'include',
+                    headers: { 'Content-Type': 'application/json', 'X-CSRF-Token': token },
+                    body: JSON.stringify({ email })
+                });
+                const data = await res.json();
+                if (res.ok) {
+                    showAlert('Invite sent successfully!', 'success');
+                    document.getElementById('invite-email').value = '';
+                } else {
+                    showAlert(data.message || 'Error sending invite.', 'error');
+                }
+            } catch (error) {
+                showAlert('Network error. Please try again.', 'error');
             }
         }
 
         async function showPatientDetail(patientId) {
             const res = await fetch(`${API_BASE_URL}/api/clinician/patient/${patientId}`, { credentials: 'include' });
             if (!res.ok) {
-                alert('Error loading patient details.');
+                showAlert('Error loading patient details.', 'error');
                 return;
             }
             const data = await res.json();
@@ -350,6 +367,81 @@
             }
         }
         checkClinicianRole();
+        // Helper to get CSRF token from cookie
+        function getCSRFToken() {
+            const match = document.cookie.match(/(?:^|; )csrf_token=([^;]*)/);
+            return match ? decodeURIComponent(match[1]) : '';
+        }
+
+        async function initCSRF() {
+            const res = await fetch(`${API_BASE_URL}/api/csrf`, { credentials: 'include' });
+            const data = await res.json();
+            // Small wait to ensure cookie is written (especially on Safari/Chrome strict mode)
+            await new Promise(resolve => setTimeout(resolve, 50));
+            return data.csrf_token;
+        }
+
+        async function handleLogout() {
+            try {
+                const token = await initCSRF();
+                await fetch(`${API_BASE_URL}/api/logout`, {
+                    method: 'POST',
+                    credentials: 'include',
+                    headers: { 'X-CSRF-Token': token }
+                });
+            } catch (error) {
+                console.error('Logout error:', error);
+            } finally {
+                sessionStorage.clear();
+                sessionStorage.setItem('justLoggedOut', 'true');
+                window.location.replace('index.html');
+            }
+        }
+
+        // Popup Modal Functions
+        function showPopup(title, message, type = 'info', buttons = ['OK']) {
+            const overlay = document.getElementById('popup-overlay');
+            const icon = document.getElementById('popup-icon');
+            const titleEl = document.getElementById('popup-title');
+            const messageEl = document.getElementById('popup-message');
+            const buttonsEl = document.getElementById('popup-buttons');
+
+            // Set icon based on type
+            const icons = {
+                'success': '✅',
+                'error': '❌',
+                'warning': '⚠️',
+                'info': 'ℹ️'
+            };
+            icon.textContent = icons[type] || icons.info;
+            icon.className = `popup-icon ${type}`;
+
+            titleEl.textContent = title;
+            messageEl.innerHTML = message;
+
+            // Create buttons
+            buttonsEl.innerHTML = '';
+            (Array.isArray(buttons) ? buttons : [buttons]).forEach((button, index) => {
+                const btn = document.createElement('button');
+                btn.textContent = button.text || button;
+                btn.className = `popup-button ${index === 0 ? 'primary' : 'secondary'}`;
+                btn.onclick = button.onclick || (() => closePopup());
+                buttonsEl.appendChild(btn);
+            });
+
+            overlay.style.display = 'flex';
+        }
+
+        function closePopup() {
+            document.getElementById('popup-overlay').style.display = 'none';
+        }
+
+        // Replace alert with popup
+        function showAlert(message, type = 'info') {
+            showPopup('Notice', message, type);
+        }
+
+        // Wire up logout button
         async function renderNavBar() {
             const navLinks = document.getElementById('nav-links');
             navLinks.innerHTML = `
