@@ -883,6 +883,24 @@
             // Initial render
             renderRecommendations();
         });
+
+        document.addEventListener('DOMContentLoaded', function() {
+            // Defensive: check if modal elements exist
+            const closeBtn = document.getElementById('modal-close');
+            const overlay = document.getElementById('modal-overlay');
+            const popup = document.getElementById('modal-popup');
+            if (closeBtn) closeBtn.onclick = hideModal;
+            if (overlay) {
+                overlay.onclick = function(e) {
+                    if (e.target === overlay) hideModal();
+                };
+            }
+            if (popup) {
+                popup.onclick = function(e) {
+                    e.stopPropagation(); // Prevent click inside modal from closing
+                };
+            }
+        });
     </script>
 </body>
 </html> 

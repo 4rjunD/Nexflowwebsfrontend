@@ -6,4 +6,3 @@ werkzeug==2.3.7
 gunicorn==21.2.0
 psycopg2-binary
 numpy
-openai
