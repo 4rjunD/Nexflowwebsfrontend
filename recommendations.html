@@ -575,12 +575,15 @@
         }
 
         // Show/hide content based on data availability
-        function checkUserData() {
+        async function checkUserData() {
             const mainContent = document.getElementById('main-content');
             const noDataMessage = document.getElementById('no-data-message');
             if (userData && userData.score !== undefined) {
                 mainContent.style.display = 'block';
                 noDataMessage.style.display = 'none';
+                
+                // Load saved recommendations
+                await loadSavedRecommendations();
                 
                 // Trigger animations with a small delay
                 setTimeout(() => {
@@ -594,7 +597,9 @@
         }
 
         // Fetch IRScore data on page load
-        window.addEventListener('DOMContentLoaded', fetchIRScoreData);
+        window.addEventListener('DOMContentLoaded', async () => {
+            await fetchIRScoreData();
+        });
 
         async function handleLogout() {
             try {
@@ -673,7 +678,7 @@
                 card.innerHTML = `
                     <div class="card-header">
                         <h3>${rec.title}</h3>
-                        <span class="impact-score">${rec.impact} Impact</span>
+                        <span class="impact-score">${rec.impact}</span>
                     </div>
                     <div class="card-content">
                         <p>${rec.description}</p>
@@ -688,50 +693,26 @@
             });
         }
 
-        // Parse recommendations from API response
-        function parseRecommendations(apiResponse) {
-            console.log('Raw API response:', apiResponse); // Debug log
-            
-            if (!apiResponse || typeof apiResponse !== 'string') {
-                console.error('Invalid API response format:', apiResponse);
-                return [];
-            }
-            
-            const lines = apiResponse.split('\n').filter(line => line.trim());
-            const parsedRecommendations = [];
-            
-            for (const line of lines) {
-                console.log('Processing line:', line); // Debug log
+        // Load saved recommendations from API
+        async function loadSavedRecommendations() {
+            try {
+                const response = await fetch(`${API_BASE_URL}/api/recommendations`, {
+                    method: 'GET',
+                    credentials: 'include'
+                });
                 
-                if (line.startsWith('- ')) {
-                    const content = line.substring(2);
-                    const parts = content.split(': ');
-                    
-                    console.log('Parts:', parts); // Debug log
-                    
-                    if (parts.length >= 4) {
-                        const category = parts[0].toLowerCase();
-                        const impact = parts[1];
-                        const title = parts[2];
-                        const description = parts.slice(3).join(': ');
-                        
-                        const recommendation = {
-                            category: category,
-                            title: title,
-                            impact: impact,
-                            description: description
-                        };
-                        
-                        console.log('Parsed recommendation:', recommendation); // Debug log
-                        parsedRecommendations.push(recommendation);
-                    } else {
-                        console.warn('Line does not have enough parts:', line);
+                if (response.ok) {
+                    const data = await response.json();
+                    if (data.recommendations && data.recommendations.length > 0) {
+                        recommendations = data.recommendations;
+                        renderRecommendations('all');
+                        return true;
                     }
                 }
+            } catch (error) {
+                console.error('Error loading saved recommendations:', error);
             }
-            
-            console.log('Final parsed recommendations:', parsedRecommendations); // Debug log
-            return parsedRecommendations;
+            return false;
         }
 
         // Get suggestions from API
@@ -778,8 +759,8 @@
                     throw new Error('No recommendations received from API');
                 }
                 
-                recommendations = parseRecommendations(data.recommendations);
-                console.log('Parsed recommendations:', recommendations); // Debug log
+                recommendations = data.recommendations;
+                console.log('Recommendations:', recommendations); // Debug log
                 
                 // Reset filter to "All" and render
                 document.querySelectorAll('.filter-button').forEach(b => b.classList.remove('active'));

@@ -6,11 +6,4 @@ werkzeug==2.3.7
 gunicorn==21.2.0
 psycopg2-binary
 numpy
-pandas
-scikit-learn
-scipy
-xgboost
-joblib
-matplotlib
-seaborn
-plotly
+openai

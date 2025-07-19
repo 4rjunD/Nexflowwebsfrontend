@@ -76,6 +76,16 @@ class IRScore(db.Model):
     score = db.Column(db.Float)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
 
+# Add a new model for Recommendations data
+class Recommendation(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    hash_id = db.Column(db.String(64), db.ForeignKey('user.hash_id'), nullable=False)
+    category = db.Column(db.String(50), nullable=False)  # diet, exercise, sleep, lifestyle
+    title = db.Column(db.String(200), nullable=False)
+    impact = db.Column(db.String(50), nullable=False)  # High Impact, Medium Impact, Low Impact
+    description = db.Column(db.Text, nullable=False)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+
 # New Patient and Clinician models
 class Patient(db.Model):
     id = db.Column(db.Integer, primary_key=True)
@@ -691,6 +701,21 @@ def get_recommendations(current_user):
     data = request.get_json()
     optional_text = data.get('optional_text', '')
     
+    # Check if user has generated recommendations recently (3 days = 259200 seconds)
+    # To change to 5 minutes, replace 259200 with 300
+    RECOMMENDATION_COOLDOWN = 259200  # 3 days in seconds
+    
+    latest_recommendation = Recommendation.query.filter_by(hash_id=current_user.hash_id).order_by(Recommendation.created_at.desc()).first()
+    if latest_recommendation:
+        time_since_last = (datetime.utcnow() - latest_recommendation.created_at).total_seconds()
+        if time_since_last < RECOMMENDATION_COOLDOWN:
+            remaining_time = RECOMMENDATION_COOLDOWN - time_since_last
+            days_remaining = int(remaining_time // 86400)
+            hours_remaining = int((remaining_time % 86400) // 3600)
+            return jsonify({
+                'message': f'You can generate new recommendations in {days_remaining} days and {hours_remaining} hours. This helps prevent API abuse.'
+            }), 429
+    
     # Get user's latest IRScore data
     irscore_data = IRScore.query.filter_by(hash_id=current_user.hash_id).order_by(IRScore.created_at.desc()).first()
     
@@ -717,10 +742,73 @@ def get_recommendations(current_user):
     
     try:
         from recsgpt import query_model
-        recommendations = query_model(user_description)
-        return jsonify({'recommendations': recommendations})
+        recommendations_text = query_model(user_description)
+        
+        # Parse and save recommendations
+        recommendations_list = parse_and_save_recommendations(current_user.hash_id, recommendations_text)
+        
+        return jsonify({'recommendations': recommendations_list})
     except Exception as e:
         return jsonify({'message': f'Error generating recommendations: {str(e)}'}), 500
+
+def parse_and_save_recommendations(hash_id, recommendations_text):
+    """Parse recommendations text and save to database"""
+    lines = recommendations_text.split('\n')
+    recommendations_list = []
+    
+    # Clear existing recommendations for this user
+    Recommendation.query.filter_by(hash_id=hash_id).delete()
+    
+    for line in lines:
+        line = line.strip()
+        if line.startswith('- '):
+            content = line[2:]  # Remove '- '
+            parts = content.split(': ')
+            
+            if len(parts) >= 4:
+                category = parts[0].lower()
+                impact = parts[1]
+                title = parts[2]
+                description = ': '.join(parts[3:])
+                
+                # Save to database
+                recommendation = Recommendation(
+                    hash_id=hash_id,
+                    category=category,
+                    title=title,
+                    impact=impact,
+                    description=description
+                )
+                db.session.add(recommendation)
+                
+                # Add to return list
+                recommendations_list.append({
+                    'category': category,
+                    'title': title,
+                    'impact': impact,
+                    'description': description
+                })
+    
+    db.session.commit()
+    return recommendations_list
+
+@app.route('/api/recommendations', methods=['GET'])
+@token_required
+def get_saved_recommendations(current_user):
+    """Get saved recommendations for the current user"""
+    recommendations = Recommendation.query.filter_by(hash_id=current_user.hash_id).order_by(Recommendation.created_at.desc()).all()
+    
+    recommendations_list = []
+    for rec in recommendations:
+        recommendations_list.append({
+            'category': rec.category,
+            'title': rec.title,
+            'impact': rec.impact,
+            'description': rec.description,
+            'created_at': rec.created_at.isoformat()
+        })
+    
+    return jsonify({'recommendations': recommendations_list})
 
 @app.route('/api/admin/fix-patient-clinic-ids', methods=['POST'])
 def fix_patient_clinic_ids():
