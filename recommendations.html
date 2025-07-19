@@ -830,6 +830,13 @@
                 recommendations = data.recommendations;
                 console.log('Recommendations:', recommendations); // Debug log
                 
+                // Check if recommendations are in the correct format
+                if (recommendations.length > 0 && typeof recommendations[0] === 'string') {
+                    console.error('Backend returned string format instead of parsed objects');
+                    showModal('Error: Backend returned incorrect format. Please try again.');
+                    return;
+                }
+                
                 // Reset filter to "All" and render
                 document.querySelectorAll('.filter-button').forEach(b => b.classList.remove('active'));
                 document.querySelector('.filter-button[data-category="all"]').classList.add('active');
