@@ -685,6 +685,43 @@ def clinician_irscore_distribution(current_user):
             bins['unknown'] += 1
     return jsonify(bins)
 
+@app.route('/api/recommendations', methods=['POST'])
+@token_required
+def get_recommendations(current_user):
+    data = request.get_json()
+    optional_text = data.get('optional_text', '')
+    
+    # Get user's latest IRScore data
+    irscore_data = IRScore.query.filter_by(hash_id=current_user.hash_id).order_by(IRScore.created_at.desc()).first()
+    
+    if not irscore_data:
+        return jsonify({'message': 'No IRScore data found. Please calculate your IRScore first.'}), 404
+    
+    # Prepare user features dictionary
+    user_features = {
+        'irscore': irscore_data.score,
+        'age': irscore_data.age,
+        'gender': irscore_data.gender,
+        'weight': irscore_data.weight,
+        'height': irscore_data.height,
+        'bmi': irscore_data.bmi,
+        'sleep': irscore_data.sleep,
+        'family_history': irscore_data.family_history,
+        'activity': irscore_data.activity
+    }
+    
+    # Convert to string and add optional text
+    user_description = str(user_features)
+    if optional_text.strip():
+        user_description += f"\n\nUser's Additional context: {optional_text}"
+    
+    try:
+        from recsgpt import query_model
+        recommendations = query_model(user_description)
+        return jsonify({'recommendations': recommendations})
+    except Exception as e:
+        return jsonify({'message': f'Error generating recommendations: {str(e)}'}), 500
+
 @app.route('/api/admin/fix-patient-clinic-ids', methods=['POST'])
 def fix_patient_clinic_ids():
     # WARNING: This endpoint should be protected or removed after use!
