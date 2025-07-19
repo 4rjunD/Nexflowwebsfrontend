@@ -512,11 +512,10 @@
                 <textarea 
                     id="optional-text" 
                     placeholder="Optional: Add any additional context about your health goals, challenges, or preferences (max 150 words)"
-                    maxlength="150"
                     rows="3"
                 ></textarea>
                 <div class="char-count">
-                    <span id="char-count">0</span>/150
+                    <span id="char-count">0</span> words
                 </div>
             </div>
             <button id="get-suggestions-btn" class="cta-button">Get Suggestions</button>
@@ -691,28 +690,47 @@
 
         // Parse recommendations from API response
         function parseRecommendations(apiResponse) {
+            console.log('Raw API response:', apiResponse); // Debug log
+            
+            if (!apiResponse || typeof apiResponse !== 'string') {
+                console.error('Invalid API response format:', apiResponse);
+                return [];
+            }
+            
             const lines = apiResponse.split('\n').filter(line => line.trim());
             const parsedRecommendations = [];
             
             for (const line of lines) {
+                console.log('Processing line:', line); // Debug log
+                
                 if (line.startsWith('- ')) {
-                    const parts = line.substring(2).split(': ');
+                    const content = line.substring(2);
+                    const parts = content.split(': ');
+                    
+                    console.log('Parts:', parts); // Debug log
+                    
                     if (parts.length >= 4) {
                         const category = parts[0].toLowerCase();
                         const impact = parts[1];
                         const title = parts[2];
                         const description = parts.slice(3).join(': ');
                         
-                        parsedRecommendations.push({
+                        const recommendation = {
                             category: category,
                             title: title,
                             impact: impact,
                             description: description
-                        });
+                        };
+                        
+                        console.log('Parsed recommendation:', recommendation); // Debug log
+                        parsedRecommendations.push(recommendation);
+                    } else {
+                        console.warn('Line does not have enough parts:', line);
                     }
                 }
             }
             
+            console.log('Final parsed recommendations:', parsedRecommendations); // Debug log
             return parsedRecommendations;
         }
 
@@ -721,6 +739,13 @@
             if (isLoading) return;
             
             const optionalText = document.getElementById('optional-text').value.trim();
+            const wordCount = optionalText === '' ? 0 : optionalText.split(/\s+/).length;
+            
+            if (wordCount > 150) {
+                alert('Please keep your additional context to 150 words or less.');
+                return;
+            }
+            
             const button = document.getElementById('get-suggestions-btn');
             
             isLoading = true;
@@ -747,7 +772,14 @@
                 }
                 
                 const data = await response.json();
+                console.log('API Response:', data); // Debug log
+                
+                if (!data.recommendations) {
+                    throw new Error('No recommendations received from API');
+                }
+                
                 recommendations = parseRecommendations(data.recommendations);
+                console.log('Parsed recommendations:', recommendations); // Debug log
                 
                 // Reset filter to "All" and render
                 document.querySelectorAll('.filter-button').forEach(b => b.classList.remove('active'));
@@ -764,16 +796,18 @@
             }
         }
 
-        // Character count for textarea
+        // Word count for textarea
         function updateCharCount() {
             const textarea = document.getElementById('optional-text');
             const charCount = document.getElementById('char-count');
-            const count = textarea.value.length;
-            charCount.textContent = count;
+            const text = textarea.value.trim();
+            const wordCount = text === '' ? 0 : text.split(/\s+/).length;
+            charCount.textContent = wordCount;
             
-            if (count > 140) {
+            if (wordCount > 150) {
                 charCount.style.color = '#EF4444';
-            } else if (count > 120) {
+                charCount.textContent = wordCount + ' (max 150)';
+            } else if (wordCount > 120) {
                 charCount.style.color = '#F59E0B';
             } else {
                 charCount.style.color = 'rgba(255, 255, 255, 0.8)';
