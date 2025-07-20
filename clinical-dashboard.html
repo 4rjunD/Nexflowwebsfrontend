@@ -911,18 +911,42 @@
                 // Combine historical and predicted data
                 const allScores = [...data.historical_scores, ...data.predicted_scores];
                 
-                // Create a continuous line by connecting the last historical point to the first predicted point
-                const historicalData = [...data.historical_scores];
-                const predictedData = [...data.predicted_scores];
+                // Create labels with dates for historical data and week numbers for predictions
+                const labels = [];
+                
+                // Add historical dates
+                if (data.historical_dates) {
+                    data.historical_dates.forEach((dateStr, index) => {
+                        const date = new Date(dateStr);
+                        labels.push(date.toLocaleDateString('en-US', { 
+                            month: 'short', 
+                            day: 'numeric',
+                            year: '2-digit'
+                        }));
+                    });
+                } else {
+                    // Fallback to week numbers if dates not available
+                    for (let i = 1; i <= 5; i++) {
+                        labels.push(`Week ${i}`);
+                    }
+                }
+                
+                // Add prediction week labels
+                for (let i = 1; i <= 5; i++) {
+                    labels.push(`Week ${i}`);
+                }
+                
+                // Create continuous data for predicted line (including connection from last historical point)
+                const continuousPredictedData = [...Array(5).fill(null), ...data.predicted_scores];
                 
                 trajectoryChart = new Chart(ctx, {
                     type: 'line',
                     data: {
-                        labels: data.labels,
+                        labels: labels,
                         datasets: [
                             {
                                 label: 'Historical IRScore',
-                                data: historicalData,
+                                data: data.historical_scores,
                                 borderColor: '#3B82F6',
                                 backgroundColor: 'rgba(59, 130, 246, 0.1)',
                                 borderWidth: 3,
@@ -933,7 +957,7 @@
                             },
                             {
                                 label: 'Predicted IRScore',
-                                data: [...Array(5).fill(null), ...predictedData], // Start predictions from week 6
+                                data: continuousPredictedData,
                                 borderColor: '#F59E0B',
                                 backgroundColor: 'rgba(245, 158, 11, 0.1)',
                                 borderWidth: 3,
@@ -941,22 +965,8 @@
                                 fill: false,
                                 tension: 0.4,
                                 pointRadius: 6,
-                                pointHoverRadius: 8
-                            },
-                            {
-                                label: 'Connection Line',
-                                data: [historicalData[4], predictedData[0]], // Connect last historical to first predicted
-                                borderColor: '#F59E0B',
-                                backgroundColor: 'transparent',
-                                borderWidth: 2,
-                                borderDash: [5, 5],
-                                fill: false,
-                                tension: 0,
-                                pointRadius: 0,
-                                pointHoverRadius: 0,
-                                segment: {
-                                    borderDash: [5, 5]
-                                }
+                                pointHoverRadius: 8,
+                                spanGaps: true // This will connect across null values
                             }
                         ]
                     },
@@ -974,9 +984,6 @@
                                 intersect: false,
                                 callbacks: {
                                     label: function(context) {
-                                        if (context.dataset.label === 'Connection Line') {
-                                            return null; // Don't show tooltip for connection line
-                                        }
                                         return context.dataset.label + ': ' + (context.parsed.y ? context.parsed.y.toFixed(1) : 'N/A');
                                     }
                                 }
