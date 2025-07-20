@@ -930,14 +930,13 @@
                         labels.push(`Week ${i}`);
                     }
                 }
-                
                 // Add prediction week labels
                 for (let i = 1; i <= 5; i++) {
                     labels.push(`Week ${i}`);
                 }
-                
                 // Create continuous data for predicted line (including connection from last historical point)
-                const continuousPredictedData = [...Array(5).fill(null), ...data.predicted_scores];
+                // The dashed line starts at the last historical value and continues through the predictions
+                const continuousPredictedData = [...Array(4).fill(null), data.historical_scores[4], ...data.predicted_scores];
                 
                 trajectoryChart = new Chart(ctx, {
                     type: 'line',
