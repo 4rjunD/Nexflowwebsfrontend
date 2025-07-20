@@ -366,6 +366,8 @@
             padding: 1.5rem;
             margin-top: 1rem;
             display: none;
+            position: relative;
+            overflow: hidden;
         }
         
         .trajectory-chart-container.show {
@@ -374,8 +376,10 @@
         }
         
         .trajectory-chart {
-            width: 100%;
-            height: 300px;
+            width: 100% !important;
+            height: 300px !important;
+            position: relative;
+            display: block;
         }
         
         .trajectory-info {
@@ -865,86 +869,102 @@
         }
         
         function renderTrajectoryChart(data) {
-            const ctx = document.getElementById('trajectory-chart').getContext('2d');
+            // Show the chart container first
+            const chartContainer = document.getElementById('trajectory-chart-container');
+            chartContainer.classList.add('show');
             
-            // Destroy existing chart if it exists
-            if (trajectoryChart) {
-                trajectoryChart.destroy();
-            }
-            
-            // Combine historical and predicted data
-            const allScores = [...data.historical_scores, ...data.predicted_scores];
-            
-            trajectoryChart = new Chart(ctx, {
-                type: 'line',
-                data: {
-                    labels: data.labels,
-                    datasets: [
-                        {
-                            label: 'Historical IRScore',
-                            data: [...data.historical_scores, ...Array(5).fill(null)], // Only show historical data
-                            borderColor: '#3B82F6',
-                            backgroundColor: 'rgba(59, 130, 246, 0.1)',
-                            borderWidth: 3,
-                            fill: false,
-                            tension: 0.4
-                        },
-                        {
-                            label: 'Predicted IRScore',
-                            data: [...Array(5).fill(null), ...data.predicted_scores], // Only show predicted data
-                            borderColor: '#F59E0B',
-                            backgroundColor: 'rgba(245, 158, 11, 0.1)',
-                            borderWidth: 3,
-                            borderDash: [5, 5], // Dashed line for predictions
-                            fill: false,
-                            tension: 0.4
-                        }
-                    ]
-                },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    plugins: {
-                        legend: {
-                            display: true,
-                            position: 'top'
-                        },
-                        tooltip: {
-                            mode: 'index',
-                            intersect: false,
-                            callbacks: {
-                                label: function(context) {
-                                    return context.dataset.label + ': ' + (context.parsed.y ? context.parsed.y.toFixed(1) : 'N/A');
+            // Wait a bit for the container to be visible and sized properly
+            setTimeout(() => {
+                const canvas = document.getElementById('trajectory-chart');
+                const ctx = canvas.getContext('2d');
+                
+                // Ensure canvas has proper dimensions
+                canvas.style.width = '100%';
+                canvas.style.height = '300px';
+                
+                // Destroy existing chart if it exists
+                if (trajectoryChart) {
+                    trajectoryChart.destroy();
+                }
+                
+                // Combine historical and predicted data
+                const allScores = [...data.historical_scores, ...data.predicted_scores];
+                
+                trajectoryChart = new Chart(ctx, {
+                    type: 'line',
+                    data: {
+                        labels: data.labels,
+                        datasets: [
+                            {
+                                label: 'Historical IRScore',
+                                data: [...data.historical_scores, ...Array(5).fill(null)], // Only show historical data
+                                borderColor: '#3B82F6',
+                                backgroundColor: 'rgba(59, 130, 246, 0.1)',
+                                borderWidth: 3,
+                                fill: false,
+                                tension: 0.4
+                            },
+                            {
+                                label: 'Predicted IRScore',
+                                data: [...Array(5).fill(null), ...data.predicted_scores], // Only show predicted data
+                                borderColor: '#F59E0B',
+                                backgroundColor: 'rgba(245, 158, 11, 0.1)',
+                                borderWidth: 3,
+                                borderDash: [5, 5], // Dashed line for predictions
+                                fill: false,
+                                tension: 0.4
+                            }
+                        ]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: {
+                            legend: {
+                                display: true,
+                                position: 'top'
+                            },
+                            tooltip: {
+                                mode: 'index',
+                                intersect: false,
+                                callbacks: {
+                                    label: function(context) {
+                                        return context.dataset.label + ': ' + (context.parsed.y ? context.parsed.y.toFixed(1) : 'N/A');
+                                    }
                                 }
                             }
-                        }
-                    },
-                    scales: {
-                        y: {
-                            beginAtZero: false,
-                            min: Math.max(0, Math.min(...allScores) - 5),
-                            max: Math.min(100, Math.max(...allScores) + 5),
-                            title: {
-                                display: true,
-                                text: 'IRScore'
+                        },
+                        scales: {
+                            y: {
+                                beginAtZero: false,
+                                min: Math.max(0, Math.min(...allScores) - 5),
+                                max: Math.min(100, Math.max(...allScores) + 5),
+                                title: {
+                                    display: true,
+                                    text: 'IRScore'
+                                }
+                            },
+                            x: {
+                                title: {
+                                    display: true,
+                                    text: 'Time Period'
+                                }
                             }
                         },
-                        x: {
-                            title: {
-                                display: true,
-                                text: 'Time Period'
-                            }
+                        animation: {
+                            duration: 1000,
+                            easing: 'easeOutQuart'
                         }
-                    },
-                    animation: {
-                        duration: 1000,
-                        easing: 'easeOutQuart'
                     }
-                }
-            });
-            
-            // Show the chart container
-            document.getElementById('trajectory-chart-container').classList.add('show');
+                });
+                
+                // Force a resize to ensure proper rendering
+                setTimeout(() => {
+                    if (trajectoryChart && trajectoryChart.resize) {
+                        trajectoryChart.resize();
+                    }
+                }, 50);
+            }, 150); // Increased delay to ensure container is properly sized
         }
         // Role check: only allow clinicians
         async function checkClinicianRole() {
@@ -1058,6 +1078,16 @@
             fetchHistogram();
             fetchPatients();
             renderNavBar();
+        });
+        
+        // Handle window resize for charts
+        window.addEventListener('resize', () => {
+            if (histogramChart) {
+                histogramChart.resize();
+            }
+            if (trajectoryChart) {
+                trajectoryChart.resize();
+            }
         });
     </script>
 </body>
