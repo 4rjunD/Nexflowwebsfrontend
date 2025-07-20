@@ -377,7 +377,7 @@
         
         .trajectory-chart {
             width: 100% !important;
-            height: 300px !important;
+            height: 400px !important;
             position: relative;
             display: block;
         }
@@ -610,6 +610,7 @@
         let histogramChart = null;
         let currentPatientId = null;
         let trajectoryChart = null;
+        let hasTrajectory = false; // Track if trajectory has been generated
 
         async function fetchHistogram() {
             const res = await fetch(`${API_BASE_URL}/api/clinician/irscore-distribution`, { credentials: 'include' });
@@ -689,6 +690,7 @@
 
         async function showPatientDetail(patientId) {
             currentPatientId = patientId; // Set current patient ID for trajectory
+            hasTrajectory = false; // Reset trajectory state
             
             const res = await fetch(`${API_BASE_URL}/api/clinician/patient/${patientId}`, { credentials: 'include' });
             if (!res.ok) {
@@ -804,6 +806,7 @@
             document.getElementById('patient-detail-modal').style.display = 'none';
             // Reset trajectory state
             currentPatientId = null;
+            hasTrajectory = false;
             if (trajectoryChart) {
                 trajectoryChart.destroy();
                 trajectoryChart = null;
@@ -836,7 +839,7 @@
             
             const button = document.getElementById('trajectory-button');
             button.disabled = true;
-            button.textContent = 'Calculating...';
+            button.textContent = hasTrajectory ? 'Updating...' : 'Calculating...';
             
             try {
                 const token = await initCSRF();
@@ -860,11 +863,29 @@
                 const data = await res.json();
                 renderTrajectoryChart(data);
                 
+                // Update button text based on whether trajectory was cached
+                hasTrajectory = true;
+                if (data.cached) {
+                    button.textContent = 'Update Trajectory Panel';
+                    // Show next update time if available
+                    if (data.next_update) {
+                        const nextUpdate = new Date(data.next_update);
+                        const now = new Date();
+                        const timeDiff = nextUpdate - now;
+                        if (timeDiff > 0) {
+                            const days = Math.floor(timeDiff / (1000 * 60 * 60 * 24));
+                            const hours = Math.floor((timeDiff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+                            showAlert(`Trajectory retrieved from cache. Next update available in ${days} days and ${hours} hours.`, 'info');
+                        }
+                    }
+                } else {
+                    button.textContent = 'Update Trajectory Panel';
+                }
+                
             } catch (error) {
                 showAlert('Network error. Please try again.', 'error');
             } finally {
                 button.disabled = false;
-                button.textContent = 'Show Trajectory Panel';
             }
         }
         
@@ -880,7 +901,7 @@
                 
                 // Ensure canvas has proper dimensions
                 canvas.style.width = '100%';
-                canvas.style.height = '300px';
+                canvas.style.height = '400px';
                 
                 // Destroy existing chart if it exists
                 if (trajectoryChart) {
@@ -890,6 +911,10 @@
                 // Combine historical and predicted data
                 const allScores = [...data.historical_scores, ...data.predicted_scores];
                 
+                // Create a continuous line by connecting the last historical point to the first predicted point
+                const historicalData = [...data.historical_scores];
+                const predictedData = [...data.predicted_scores];
+                
                 trajectoryChart = new Chart(ctx, {
                     type: 'line',
                     data: {
@@ -897,28 +922,48 @@
                         datasets: [
                             {
                                 label: 'Historical IRScore',
-                                data: [...data.historical_scores, ...Array(5).fill(null)], // Only show historical data
+                                data: historicalData,
                                 borderColor: '#3B82F6',
                                 backgroundColor: 'rgba(59, 130, 246, 0.1)',
                                 borderWidth: 3,
                                 fill: false,
-                                tension: 0.4
+                                tension: 0.4,
+                                pointRadius: 6,
+                                pointHoverRadius: 8
                             },
                             {
                                 label: 'Predicted IRScore',
-                                data: [...Array(5).fill(null), ...data.predicted_scores], // Only show predicted data
+                                data: [...Array(5).fill(null), ...predictedData], // Start predictions from week 6
                                 borderColor: '#F59E0B',
                                 backgroundColor: 'rgba(245, 158, 11, 0.1)',
                                 borderWidth: 3,
                                 borderDash: [5, 5], // Dashed line for predictions
                                 fill: false,
-                                tension: 0.4
+                                tension: 0.4,
+                                pointRadius: 6,
+                                pointHoverRadius: 8
+                            },
+                            {
+                                label: 'Connection Line',
+                                data: [historicalData[4], predictedData[0]], // Connect last historical to first predicted
+                                borderColor: '#F59E0B',
+                                backgroundColor: 'transparent',
+                                borderWidth: 2,
+                                borderDash: [5, 5],
+                                fill: false,
+                                tension: 0,
+                                pointRadius: 0,
+                                pointHoverRadius: 0,
+                                segment: {
+                                    borderDash: [5, 5]
+                                }
                             }
                         ]
                     },
                     options: {
                         responsive: true,
-                        maintainAspectRatio: false,
+                        maintainAspectRatio: true,
+                        aspectRatio: 2, // Better aspect ratio
                         plugins: {
                             legend: {
                                 display: true,
@@ -929,6 +974,9 @@
                                 intersect: false,
                                 callbacks: {
                                     label: function(context) {
+                                        if (context.dataset.label === 'Connection Line') {
+                                            return null; // Don't show tooltip for connection line
+                                        }
                                         return context.dataset.label + ': ' + (context.parsed.y ? context.parsed.y.toFixed(1) : 'N/A');
                                     }
                                 }
@@ -942,18 +990,28 @@
                                 title: {
                                     display: true,
                                     text: 'IRScore'
+                                },
+                                grid: {
+                                    color: 'rgba(0,0,0,0.1)'
                                 }
                             },
                             x: {
                                 title: {
                                     display: true,
                                     text: 'Time Period'
+                                },
+                                grid: {
+                                    color: 'rgba(0,0,0,0.1)'
                                 }
                             }
                         },
                         animation: {
                             duration: 1000,
                             easing: 'easeOutQuart'
+                        },
+                        interaction: {
+                            intersect: false,
+                            mode: 'index'
                         }
                     }
                 });
