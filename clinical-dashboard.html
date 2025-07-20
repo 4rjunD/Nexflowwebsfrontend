@@ -120,7 +120,7 @@
             background: white;
             border-radius: 16px;
             padding: 2rem;
-            max-width: 600px;
+            max-width: 800px;
             width: 95vw;
             box-shadow: 0 8px 32px rgba(0,0,0,0.25);
             position: relative;
@@ -294,6 +294,87 @@
         .popup-icon.error { color: #EF4444; }
         .popup-icon.warning { color: #F59E0B; }
         .popup-icon.info { color: #3B82F6; }
+        
+        /* Animation keyframes */
+        @keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+        
+        /* Trajectory Panel Styles */
+        .trajectory-section {
+            margin-top: 2rem;
+            padding-top: 2rem;
+            border-top: 1px solid #E5E7EB;
+        }
+        
+        .trajectory-button {
+            background: var(--gradient);
+            color: white;
+            border: none;
+            padding: 0.8rem 1.5rem;
+            border-radius: 8px;
+            font-size: 1rem;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            margin-bottom: 1rem;
+        }
+        
+        .trajectory-button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        }
+        
+        .trajectory-button:disabled {
+            background: #9CA3AF;
+            cursor: not-allowed;
+            transform: none;
+            box-shadow: none;
+        }
+        
+        .trajectory-chart-container {
+            background: #F9FAFB;
+            border-radius: 12px;
+            padding: 1.5rem;
+            margin-top: 1rem;
+            display: none;
+        }
+        
+        .trajectory-chart-container.show {
+            display: block;
+            animation: fadeInUp 0.5s ease-out;
+        }
+        
+        .trajectory-chart {
+            width: 100%;
+            height: 300px;
+        }
+        
+        .trajectory-info {
+            margin-top: 1rem;
+            padding: 1rem;
+            background: #EFF6FF;
+            border-radius: 8px;
+            border-left: 4px solid #3B82F6;
+        }
+        
+        .trajectory-info h4 {
+            color: #1E40AF;
+            margin-bottom: 0.5rem;
+        }
+        
+        .trajectory-info p {
+            color: #374151;
+            font-size: 0.9rem;
+            margin: 0;
+        }
     </style>
 </head>
 <body>
@@ -339,6 +420,18 @@
         <div class="patient-detail-content">
             <button class="close-btn" onclick="closePatientDetail()">&times;</button>
             <div id="patient-detail-content"></div>
+            <div class="trajectory-section">
+                <button id="trajectory-button" class="trajectory-button" onclick="showTrajectory()">
+                    Show Trajectory Panel
+                </button>
+                <div id="trajectory-chart-container" class="trajectory-chart-container">
+                    <canvas id="trajectory-chart" class="trajectory-chart"></canvas>
+                    <div class="trajectory-info">
+                        <h4>Trajectory Analysis</h4>
+                        <p>This chart shows the patient's 5 most recent IRScore values (blue line) and AI-predicted values for the next 5 weeks (orange line). The prediction is based on current trends and typical metabolic health progression patterns.</p>
+                    </div>
+                </div>
+            </div>
         </div>
     </div>
     <!-- Modern Popup Modal -->
@@ -355,6 +448,8 @@
     <script>
         const API_BASE_URL = 'https://api.nexflowai.app/';
         let histogramChart = null;
+        let currentPatientId = null;
+        let trajectoryChart = null;
 
         async function fetchHistogram() {
             const res = await fetch(`${API_BASE_URL}/api/clinician/irscore-distribution`, { credentials: 'include' });
@@ -433,6 +528,8 @@
         }
 
         async function showPatientDetail(patientId) {
+            currentPatientId = patientId; // Set current patient ID for trajectory
+            
             const res = await fetch(`${API_BASE_URL}/api/clinician/patient/${patientId}`, { credentials: 'include' });
             if (!res.ok) {
                 showAlert('Error loading patient details.', 'error');
@@ -441,6 +538,19 @@
             const data = await res.json();
             const container = document.getElementById('patient-detail-content');
             let html = `<h2>${data.name}</h2><p>${data.email}</p>`;
+            
+            // Check if patient has enough IRScore records for trajectory
+            const hasEnoughRecords = data.irscore_history && data.irscore_history.length >= 5;
+            const trajectoryButton = document.getElementById('trajectory-button');
+            
+            if (hasEnoughRecords) {
+                trajectoryButton.disabled = false;
+                trajectoryButton.textContent = 'Show Trajectory Panel';
+            } else {
+                trajectoryButton.disabled = true;
+                trajectoryButton.textContent = `Need ${5 - (data.irscore_history ? data.irscore_history.length : 0)} more IRScore records`;
+            }
+            
             if (data.irscore_history && data.irscore_history.length > 0) {
                 html += '<h3>IRScore History</h3><ul>';
                 data.irscore_history.forEach(item => {
@@ -465,6 +575,138 @@
         }
         function closePatientDetail() {
             document.getElementById('patient-detail-modal').style.display = 'none';
+            // Reset trajectory state
+            currentPatientId = null;
+            if (trajectoryChart) {
+                trajectoryChart.destroy();
+                trajectoryChart = null;
+            }
+            document.getElementById('trajectory-chart-container').classList.remove('show');
+            document.getElementById('trajectory-button').disabled = false;
+            document.getElementById('trajectory-button').textContent = 'Show Trajectory Panel';
+        }
+        
+        async function showTrajectory() {
+            if (!currentPatientId) {
+                showAlert('No patient selected for trajectory analysis.', 'error');
+                return;
+            }
+            
+            const button = document.getElementById('trajectory-button');
+            button.disabled = true;
+            button.textContent = 'Calculating...';
+            
+            try {
+                const token = await initCSRF();
+                const res = await fetch(`${API_BASE_URL}/api/clinician/patient/${currentPatientId}/trajectory`, {
+                    method: 'POST',
+                    credentials: 'include',
+                    headers: { 'Content-Type': 'application/json', 'X-CSRF-Token': token }
+                });
+                
+                if (res.status === 429) {
+                    showAlert('Trajectory calculation is rate limited. Please wait before trying again.', 'warning');
+                    return;
+                }
+                
+                if (!res.ok) {
+                    const data = await res.json();
+                    showAlert(data.message || 'Error calculating trajectory.', 'error');
+                    return;
+                }
+                
+                const data = await res.json();
+                renderTrajectoryChart(data);
+                
+            } catch (error) {
+                showAlert('Network error. Please try again.', 'error');
+            } finally {
+                button.disabled = false;
+                button.textContent = 'Show Trajectory Panel';
+            }
+        }
+        
+        function renderTrajectoryChart(data) {
+            const ctx = document.getElementById('trajectory-chart').getContext('2d');
+            
+            // Destroy existing chart if it exists
+            if (trajectoryChart) {
+                trajectoryChart.destroy();
+            }
+            
+            // Combine historical and predicted data
+            const allScores = [...data.historical_scores, ...data.predicted_scores];
+            
+            trajectoryChart = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: data.labels,
+                    datasets: [
+                        {
+                            label: 'Historical IRScore',
+                            data: [...data.historical_scores, ...Array(5).fill(null)], // Only show historical data
+                            borderColor: '#3B82F6',
+                            backgroundColor: 'rgba(59, 130, 246, 0.1)',
+                            borderWidth: 3,
+                            fill: false,
+                            tension: 0.4
+                        },
+                        {
+                            label: 'Predicted IRScore',
+                            data: [...Array(5).fill(null), ...data.predicted_scores], // Only show predicted data
+                            borderColor: '#F59E0B',
+                            backgroundColor: 'rgba(245, 158, 11, 0.1)',
+                            borderWidth: 3,
+                            borderDash: [5, 5], // Dashed line for predictions
+                            fill: false,
+                            tension: 0.4
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            display: true,
+                            position: 'top'
+                        },
+                        tooltip: {
+                            mode: 'index',
+                            intersect: false,
+                            callbacks: {
+                                label: function(context) {
+                                    return context.dataset.label + ': ' + (context.parsed.y ? context.parsed.y.toFixed(1) : 'N/A');
+                                }
+                            }
+                        }
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: false,
+                            min: Math.max(0, Math.min(...allScores) - 5),
+                            max: Math.min(100, Math.max(...allScores) + 5),
+                            title: {
+                                display: true,
+                                text: 'IRScore'
+                            }
+                        },
+                        x: {
+                            title: {
+                                display: true,
+                                text: 'Time Period'
+                            }
+                        }
+                    },
+                    animation: {
+                        duration: 1000,
+                        easing: 'easeOutQuart'
+                    }
+                }
+            });
+            
+            // Show the chart container
+            document.getElementById('trajectory-chart-container').classList.add('show');
         }
         // Role check: only allow clinicians
         async function checkClinicianRole() {
