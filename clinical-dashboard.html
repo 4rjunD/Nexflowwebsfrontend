@@ -120,8 +120,10 @@
             background: white;
             border-radius: 16px;
             padding: 2rem;
-            max-width: 800px;
+            max-width: 900px;
             width: 95vw;
+            max-height: 90vh;
+            overflow-y: auto;
             box-shadow: 0 8px 32px rgba(0,0,0,0.25);
             position: relative;
         }
@@ -210,6 +212,25 @@
                 margin-top: 0;
                 padding: 0.4rem 0.8rem;
                 font-size: 0.8rem;
+            }
+            
+            /* Mobile improvements for patient detail modal */
+            .patient-detail-content {
+                padding: 1rem;
+                max-height: 95vh;
+            }
+            
+            .irscore-history-details {
+                grid-template-columns: 1fr;
+                gap: 0.25rem;
+            }
+            
+            .irscore-history-item {
+                padding: 0.75rem;
+            }
+            
+            .irscore-history-content {
+                max-height: 300px;
             }
         }
         /* Modern Popup Modal Styles (copied from irscore.html) */
@@ -374,6 +395,141 @@
             color: #374151;
             font-size: 0.9rem;
             margin: 0;
+        }
+        
+        /* Collapsible IRScore History Styles */
+        .irscore-history-section {
+            margin-top: 1.5rem;
+        }
+        
+        .irscore-history-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            cursor: pointer;
+            padding: 0.75rem;
+            background: #F3F4F6;
+            border-radius: 8px;
+            margin-bottom: 0.5rem;
+            transition: all 0.3s ease;
+        }
+        
+        .irscore-history-header:hover {
+            background: #E5E7EB;
+        }
+        
+        .irscore-history-header h3 {
+            margin: 0;
+            color: var(--primary-color);
+            font-size: 1.1rem;
+        }
+        
+        .irscore-history-toggle {
+            background: none;
+            border: none;
+            font-size: 1.2rem;
+            color: var(--primary-color);
+            cursor: pointer;
+            padding: 0.25rem;
+            border-radius: 4px;
+            transition: transform 0.3s ease;
+        }
+        
+        .irscore-history-toggle:hover {
+            background: rgba(139, 92, 246, 0.1);
+        }
+        
+        .irscore-history-toggle.collapsed {
+            transform: rotate(-90deg);
+        }
+        
+        .irscore-history-content {
+            max-height: 400px;
+            overflow-y: auto;
+            transition: max-height 0.3s ease;
+            border-radius: 8px;
+            background: #F9FAFB;
+            padding: 1rem;
+        }
+        
+        .irscore-history-content.collapsed {
+            max-height: 0;
+            overflow: hidden;
+            padding: 0 1rem;
+        }
+        
+        .irscore-history-list {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+        }
+        
+        .irscore-history-item {
+            background: white;
+            border-radius: 8px;
+            padding: 1rem;
+            margin-bottom: 0.75rem;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+            border-left: 4px solid var(--primary-color);
+        }
+        
+        .irscore-history-item:last-child {
+            margin-bottom: 0;
+        }
+        
+        .irscore-history-score {
+            font-size: 1.2rem;
+            font-weight: 600;
+            color: var(--primary-color);
+            margin-bottom: 0.5rem;
+        }
+        
+        .irscore-history-date {
+            color: #6B7280;
+            font-size: 0.9rem;
+            margin-bottom: 0.75rem;
+        }
+        
+        .irscore-history-details {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 0.5rem;
+            font-size: 0.9rem;
+        }
+        
+        .irscore-history-detail {
+            display: flex;
+            justify-content: space-between;
+            padding: 0.25rem 0;
+        }
+        
+        .irscore-history-detail-label {
+            color: #6B7280;
+            font-weight: 500;
+        }
+        
+        .irscore-history-detail-value {
+            color: #374151;
+        }
+        
+        .irscore-history-summary {
+            background: #EFF6FF;
+            border-radius: 8px;
+            padding: 0.75rem;
+            margin-bottom: 1rem;
+            border-left: 4px solid #3B82F6;
+        }
+        
+        .irscore-history-summary h4 {
+            margin: 0 0 0.5rem 0;
+            color: #1E40AF;
+            font-size: 1rem;
+        }
+        
+        .irscore-history-summary p {
+            margin: 0;
+            color: #374151;
+            font-size: 0.9rem;
         }
     </style>
 </head>
@@ -552,21 +708,88 @@
             }
             
             if (data.irscore_history && data.irscore_history.length > 0) {
-                html += '<h3>IRScore History</h3><ul>';
-                data.irscore_history.forEach(item => {
-                    html += `<li><b>${Math.round(item.score)}</b> (${new Date(item.created_at).toLocaleString()})`;
-                    html += `<ul style='margin-left:1.2em;'>`;
-                    html += `<li>Age: ${item.age}</li>`;
-                    html += `<li>Gender: ${item.gender}</li>`;
-                    html += `<li>Weight: ${item.weight}</li>`;
-                    html += `<li>Height: ${item.height}</li>`;
-                    html += `<li>BMI: ${item.bmi}</li>`;
-                    html += `<li>Sleep: ${item.sleep}</li>`;
-                    html += `<li>Family History: ${item.family_history}</li>`;
-                    html += `<li>Activity: ${item.activity}</li>`;
-                    html += `</ul></li>`;
+                // Calculate summary statistics
+                const scores = data.irscore_history.map(item => item.score);
+                const latestScore = scores[0];
+                const averageScore = scores.reduce((a, b) => a + b, 0) / scores.length;
+                const trend = scores.length > 1 ? (scores[0] - scores[1]) : 0;
+                const trendText = trend > 0 ? 'improving' : trend < 0 ? 'declining' : 'stable';
+                
+                html += `
+                    <div class="irscore-history-section">
+                        <div class="irscore-history-summary">
+                            <h4>IRScore Summary</h4>
+                            <p>Latest: <strong>${Math.round(latestScore)}</strong> | Average: <strong>${Math.round(averageScore)}</strong> | Trend: <strong>${trendText}</strong> (${scores.length} total records)</p>
+                        </div>
+                        
+                        <div class="irscore-history-header" onclick="toggleIRScoreHistory()">
+                            <h3>IRScore History (${data.irscore_history.length} records)</h3>
+                            <button class="irscore-history-toggle" id="irscore-toggle">▼</button>
+                        </div>
+                        
+                        <div class="irscore-history-content" id="irscore-content">
+                            <ul class="irscore-history-list">
+                `;
+                
+                data.irscore_history.forEach((item, index) => {
+                    const riskLevel = item.score >= 81.8 ? 'excellent' : 
+                                    item.score >= 71.1 ? 'good' : 
+                                    item.score >= 35.4 ? 'moderate' : 'high';
+                    const riskColor = riskLevel === 'excellent' ? '#4ADE80' : 
+                                    riskLevel === 'good' ? '#FCD34D' : 
+                                    riskLevel === 'moderate' ? '#FB923C' : '#F87171';
+                    
+                    html += `
+                        <li class="irscore-history-item">
+                            <div class="irscore-history-score" style="color: ${riskColor}">
+                                ${Math.round(item.score)} ${index === 0 ? '(Latest)' : ''}
+                            </div>
+                            <div class="irscore-history-date">
+                                ${new Date(item.created_at).toLocaleString()}
+                            </div>
+                            <div class="irscore-history-details">
+                                <div class="irscore-history-detail">
+                                    <span class="irscore-history-detail-label">Age:</span>
+                                    <span class="irscore-history-detail-value">${item.age}</span>
+                                </div>
+                                <div class="irscore-history-detail">
+                                    <span class="irscore-history-detail-label">Gender:</span>
+                                    <span class="irscore-history-detail-value">${item.gender}</span>
+                                </div>
+                                <div class="irscore-history-detail">
+                                    <span class="irscore-history-detail-label">Weight:</span>
+                                    <span class="irscore-history-detail-value">${item.weight} lbs</span>
+                                </div>
+                                <div class="irscore-history-detail">
+                                    <span class="irscore-history-detail-label">Height:</span>
+                                    <span class="irscore-history-detail-value">${item.height} in</span>
+                                </div>
+                                <div class="irscore-history-detail">
+                                    <span class="irscore-history-detail-label">BMI:</span>
+                                    <span class="irscore-history-detail-value">${item.bmi}</span>
+                                </div>
+                                <div class="irscore-history-detail">
+                                    <span class="irscore-history-detail-label">Sleep:</span>
+                                    <span class="irscore-history-detail-value">${item.sleep}</span>
+                                </div>
+                                <div class="irscore-history-detail">
+                                    <span class="irscore-history-detail-label">Family History:</span>
+                                    <span class="irscore-history-detail-value">${item.family_history}</span>
+                                </div>
+                                <div class="irscore-history-detail">
+                                    <span class="irscore-history-detail-label">Activity:</span>
+                                    <span class="irscore-history-detail-value">${item.activity}</span>
+                                </div>
+                            </div>
+                        </li>
+                    `;
                 });
-                html += '</ul>';
+                
+                html += `
+                            </ul>
+                        </div>
+                    </div>
+                `;
             } else {
                 html += '<p>No IRScore history available.</p>';
             }
@@ -584,6 +807,21 @@
             document.getElementById('trajectory-chart-container').classList.remove('show');
             document.getElementById('trajectory-button').disabled = false;
             document.getElementById('trajectory-button').textContent = 'Show Trajectory Panel';
+        }
+        
+        function toggleIRScoreHistory() {
+            const content = document.getElementById('irscore-content');
+            const toggle = document.getElementById('irscore-toggle');
+            
+            if (content.classList.contains('collapsed')) {
+                content.classList.remove('collapsed');
+                toggle.textContent = '▼';
+                toggle.classList.remove('collapsed');
+            } else {
+                content.classList.add('collapsed');
+                toggle.textContent = '▶';
+                toggle.classList.add('collapsed');
+            }
         }
         
         async function showTrajectory() {
