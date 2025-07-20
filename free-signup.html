@@ -450,7 +450,7 @@
         </div>
         <form id="signup-form" onsubmit="handleSignup(event)">
             <div class="form-group" id="clinic-id-group" style="display:none;">
-                <label for="clinic-id">Clinic ID</label>
+                <label id="clinic-id-label" for="clinic-id">Clinic ID</label>
                 <input type="text" id="clinic-id" name="clinic-id" maxlength="6" pattern="\d{6}" inputmode="numeric" autocomplete="one-time-code" placeholder="Enter 6-digit Clinic ID">
                 <div class="error-message" id="clinic-id-error"></div>
             </div>
@@ -611,7 +611,6 @@
                 }
                 let body = { name, email, password, role: selectedRole };
                 if (selectedRole === 'clinician') {
-                    // Clean up input: trim and remove non-digits
                     const cleanedClinicId = clinicId.trim().replace(/\D/g, '');
                     if (!cleanedClinicId || cleanedClinicId.length !== 6) {
                         document.getElementById('clinic-id-error').textContent = 'Valid 6-digit Clinic ID required';
@@ -619,6 +618,14 @@
                         return;
                     }
                     body.clinic_id = cleanedClinicId;
+                } else if (selectedRole === 'patient') {
+                    const cleanedPatientId = clinicId.trim().replace(/\D/g, '');
+                    if (!cleanedPatientId || cleanedPatientId.length !== 6) {
+                        document.getElementById('clinic-id-error').textContent = 'Valid 6-digit Clinic Patient ID required';
+                        document.getElementById('clinic-id-error').style.display = 'block';
+                        return;
+                    }
+                    body.patient_signup_id = cleanedPatientId;
                 }
                 const response = await fetch(`${API_BASE_URL}/api/signup`, {
                     method: 'POST',
@@ -734,7 +741,17 @@
                 document.getElementById('role-selection-container').style.display = 'none';
                 document.getElementById('signup-form-container').style.display = 'block';
                 document.getElementById('signup-role-label').textContent = 'Sign up as ' + role.charAt(0).toUpperCase() + role.slice(1);
-                document.getElementById('clinic-id-group').style.display = (role === 'clinician') ? 'block' : 'none';
+                const group = document.getElementById('clinic-id-group');
+                const label = document.getElementById('clinic-id-label');
+                if (role === 'clinician') {
+                    group.style.display = 'block';
+                    label.textContent = 'Clinic ID';
+                    document.getElementById('clinic-id').placeholder = 'Enter 6-digit Clinic ID';
+                } else {
+                    group.style.display = 'block';
+                    label.textContent = 'Clinic Patient ID';
+                    document.getElementById('clinic-id').placeholder = 'Enter 6-digit Clinic Patient ID';
+                }
             } else {
                 // Show role selection if no role is found
                 document.getElementById('role-selection-container').style.display = 'flex';
@@ -749,7 +766,17 @@
                 document.getElementById('role-selection-container').style.display = 'none';
                 document.getElementById('signup-form-container').style.display = 'block';
                 document.getElementById('signup-role-label').textContent = 'Sign up as ' + role.charAt(0).toUpperCase() + role.slice(1);
-                document.getElementById('clinic-id-group').style.display = (role === 'clinician') ? 'block' : 'none';
+                const group = document.getElementById('clinic-id-group');
+                const label = document.getElementById('clinic-id-label');
+                if (role === 'clinician') {
+                    group.style.display = 'block';
+                    label.textContent = 'Clinic ID';
+                    document.getElementById('clinic-id').placeholder = 'Enter 6-digit Clinic ID';
+                } else {
+                    group.style.display = 'block';
+                    label.textContent = 'Clinic Patient ID';
+                    document.getElementById('clinic-id').placeholder = 'Enter 6-digit Clinic Patient ID';
+                }
             }
         });
     </script>

@@ -544,10 +544,7 @@
     <div class="dashboard-container">
         <div class="dashboard-header">
             <h1>Dashboard</h1>
-            <div class="invite-section">
-                <input type="email" id="invite-email" placeholder="Invite patient by email">
-                <button onclick="invitePatient()">Send Invite</button>
-            </div>
+            <!-- Invite section removed -->
         </div>
         <div class="histogram-section">
             <canvas id="histogramChart" height="80"></canvas>
@@ -660,32 +657,6 @@
                 `;
                 tbody.appendChild(tr);
             });
-        }
-
-        async function invitePatient() {
-            const email = document.getElementById('invite-email').value.trim();
-            if (!email) {
-                showAlert('Please enter a patient email.', 'warning');
-                return;
-            }
-            try {
-                const token = await initCSRF();
-                const res = await fetch(`${API_BASE_URL}/api/clinician/invite`, {
-                    method: 'POST',
-                    credentials: 'include',
-                    headers: { 'Content-Type': 'application/json', 'X-CSRF-Token': token },
-                    body: JSON.stringify({ email })
-                });
-                const data = await res.json();
-                if (res.ok) {
-                    showPopup('Invite Sent', `An invitation was sent to <b>${email}</b>.`, 'success');
-                    document.getElementById('invite-email').value = '';
-                } else {
-                    showAlert(data.message || 'Error sending invite.', 'error');
-                }
-            } catch (error) {
-                showAlert('Network error. Please try again.', 'error');
-            }
         }
 
         async function showPatientDetail(patientId) {

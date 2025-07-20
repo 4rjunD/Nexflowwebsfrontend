@@ -904,63 +904,7 @@
             // }
         });
 
-        // Check for pending clinician invite on page load
-        async function checkClinicianInvite() {
-            try {
-                const sessionRes = await fetch(`${API_BASE_URL}/api/session`, { credentials: 'include' });
-                if (!sessionRes.ok) return;
-                const sessionData = await sessionRes.json();
-                if (!sessionData.authenticated) return;
-                const res = await fetch(`${API_BASE_URL}/api/patient/invite-status`, { credentials: 'include' });
-                if (!res.ok) return;
-                const data = await res.json();
-                if (data.pending) {
-                    showPopup(
-                        'Clinic Invitation',
-                        `<div style="font-size:1.1rem;line-height:1.6;">
-                            <span style="font-weight:600; color:var(--primary-color);">${data.clinician_name}</span><br>
-                            <span style="color:#6B7280; font-size:0.98rem;">(${data.clinician_email})</span><br><br>
-                            has invited you to join their clinic.<br><br>
-                            <b>Would you like to accept this invitation?</b>
-                        </div>`,
-                        'info',
-                        [
-                            { text: 'Accept', onclick: () => respondToInvite('accept') },
-                            { text: 'Reject', onclick: () => respondToInvite('reject') }
-                        ]
-                    );
-                }
-            } catch (e) {
-                // Ignore errors
-            }
-        }
-
-        async function respondToInvite(action) {
-            try {
-                const token = await initCSRF();
-                const res = await fetch(`${API_BASE_URL}/api/patient/respond-invite`, {
-                    method: 'POST',
-                    credentials: 'include',
-                    headers: { 'Content-Type': 'application/json', 'X-CSRF-Token': token },
-                    body: JSON.stringify({ action })
-                });
-                const data = await res.json();
-                closePopup();
-                if (res.ok) {
-                    showAlert(action === 'accept' ? 'You have joined your clinician.' : 'You have rejected the invitation.', 'success');
-                } else {
-                    showAlert(data.message || 'Error processing invite.', 'error');
-                }
-            } catch (e) {
-                showAlert('Network error. Please try again.', 'error');
-            }
-        }
-
-        // Call on page load
-        window.addEventListener('DOMContentLoaded', () => {
-            fetchAndDisplayIRScore();
-            checkClinicianInvite();
-        });
+        // Remove checkClinicianInvite, respondToInvite, and their invocation in DOMContentLoaded
 
         async function renderNavBar() {
             const navLinks = document.getElementById('nav-links');
